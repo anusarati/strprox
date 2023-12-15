@@ -1,8 +1,10 @@
 use crate::strprox::gats::*;
+use std::cmp::Ordering;
 use std::cmp::{max, min};
-use std::collections::BTreeMap;
+use std::collections::BinaryHeap;
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::ops::Range;
 
 /// Contains a map from substrings to original strings
@@ -165,7 +167,9 @@ struct LevelSegments<'a> {
 }
 
 impl LevelSegments<'_> {
-    /// Returns vector of frequencies of each query segment starting at the same index as the vector's
+    /// Returns vector of frequencies of each query segment
+    /// `segments`: number of segments
+    /// `len`: length of each segment
     fn frequencies(
         segments: u32,
         len: u32,
@@ -181,6 +185,8 @@ impl LevelSegments<'_> {
             .collect()
     }
 
+    /// Produces segmentation information for `query` based on the frequencies of each query segment
+    /// at a certain tree level
     fn new<'a>(
         query: &'a str,
         depth: u32,
@@ -218,32 +224,77 @@ impl LevelSegments<'_> {
     }
 }
 
+#[derive(PartialEq, Eq)]
+struct SegmentRange {
+    range: Range<u32>,
+}
+
+impl PartialOrd for SegmentRange {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for SegmentRange {
+    fn cmp(&self, other: &Self) -> Ordering {
+        // not using range as Iterator's cmp because it would iterate through the range
+        let start_order = self.range.start.cmp(&other.range.start);
+        if start_order != Ordering::Equal {
+            return start_order;
+        }
+        self.range.end.cmp(&other.range.end)
+    }
+}
+
+impl From<Range<u32>> for SegmentRange {
+    fn from(value: Range<u32>) -> Self {
+        SegmentRange { range: value }
+    }
+}
+
+impl From<SegmentRange> for Range<u32> {
+    fn from(value: SegmentRange) -> Self {
+        value.range
+    }
+}
+
 #[derive(Default)]
 struct SegmentMatches<'a> {
     // matching query substring ranges for original strings of each matched substring in the tree
-    // Vec should be faster than BTreeMap for small number of substring ranges
-    matches: HashMap<&'a str, Vec<Range<u32>>>,
+    matches: HashMap<&'a str, BTreeSet<SegmentRange>>,
 }
 
 impl<'a> SegmentMatches<'a> {
+    /// Returns the maximum number of disjoint segments that were matched between the query and `string`,
+    /// consuming the match information
+    /// Replaces SEGCOUNT from the paper from doi: 10.1109/ICDE.2015.7113311
+    fn maximum_disjoint_set_size(&mut self, string: &str) -> u32 {
+        // https://en.wikipedia.org/wiki/Maximum_disjoint_set#1-dimensional_intervals:_exact_polynomial_algorithm
+        // This will result in the cardinality of the maximum disjoint set, so dynamic programming is unnecessary
+        let mut size: u32 = 0;
+        if let Some(ranges) = self.matches.get(string) {
+            let mut upper: i32 = -1;
+            for range in ranges {
+                let range: Range<u32> = (*range).into();
+                // skip all overlapping ranges (the first range with the end at upper cannot intersect more than the others)
+                if range.start as i32 > upper {
+                    size += 1;
+                    upper = range.end as i32;
+                }
+            }
+            self.matches.remove(string);
+        }
+        size
+    }
+
     /// Inserts a matching substring range in the query for the string
     fn insert(&mut self, string: &str, subquery_range: Range<u32>) {
-        // don't add the match if there's any overlapping match that has already been added
-        // replaces SEGCOUNT from the paper
         if let Some(mut ranges) = self.matches.get_mut(&string) {
-            // if none of the ranges overlap https://stackoverflow.com/a/3269471
-            if ranges
-                .iter()
-                .all(|range| range.start >= subquery_range.end || subquery_range.start >= range.end)
-            {
-                ranges.push(subquery_range)
-            }
+            ranges.insert(subquery_range.into());
         } else {
-            if let Some(ranges) = self.matches.get(string) {
-                ranges.push(subquery_range);
-            } else {
-                self.matches.insert(string, vec![subquery_range]);
-            }
+            let mut ranges = BTreeSet::<SegmentRange>::new();
+            ranges.insert(subquery_range.into());
+            self.matches.insert(string, ranges);
         }
     }
     /// Removes all matches for the string
@@ -253,22 +304,22 @@ impl<'a> SegmentMatches<'a> {
     /// Returns number of matching substrings for the string
     fn count(&self, string: &str) -> u32 {
         if let Some(ranges) = self.matches.get(string) {
-            ranges.len()
+            ranges.len() as u32
         } else {
             0
         }
     }
     /// Consumes the matches and returns a map from match frequency to original string
-    fn to_sorted(self) -> BTreeMap<u32, HashSet<&str>> {
+    fn to_sorted(self) -> BTreeMap<u32, HashSet<&'a str>> {
         let mut frequency_map = BTreeMap::<u32, HashSet<&str>>::new();
         for (string, ranges) in self.matches {
-            let frequency = ranges.len();
+            let frequency = ranges.len() as u32;
             let mut mapped: &mut HashSet<&str>;
-            if let Some(strings) = frequency_map.get_mut(frequency) {
+            if let Some(strings) = frequency_map.get_mut(&frequency) {
                 mapped = strings;
             } else {
                 frequency_map.insert(frequency, Default::default());
-                mapped = frequency_map.get_mut(frequency).unwrap();
+                mapped = frequency_map.get_mut(&frequency).unwrap();
             }
             mapped.insert(string);
         }
@@ -278,14 +329,14 @@ impl<'a> SegmentMatches<'a> {
 
 struct MatchFinder<'a> {
     coords: LevelCoordinates,
-    level: &'a HSLevel,
+    level: &'a HSLevel<'a>,
     query: &'a str,
     threshold: u32,
-    segments: &'a LevelSegments,
-    matches: &'a mut SegmentMatches,
+    segments: &'a LevelSegments<'a>,
+    matches: &'a mut SegmentMatches<'a>,
 }
 
-impl MatchFinder {
+impl MatchFinder<'_> {
     /// Adds substring matches within a level
     fn crawl(
         &mut self,
@@ -293,18 +344,19 @@ impl MatchFinder {
         cond: fn(LevelLengthCategory, u32) -> bool,
         insert: fn(&mut SegmentMatches, &HSTreeNode),
     ) {
-        let coords = TreeCoordinates::from(self.coords);
+        let mut coords = TreeCoordinates::from(self.coords);
 
-        while coords.sibling_index < self.level.len() {
-            let candidate_range = coords.candidate_range(query, self.threshold);
+        while coords.sibling_index < self.level.nodes.len() as u32 {
+            let candidate_range = coords.candidate_range(self.query, self.threshold);
             let len = coords.len();
             let len_category = LevelCoordinates::from(coords).categorize_len(len);
-            if (cond(len_category, segment_index)) {
+            if cond(len_category, segment_index) {
                 let query_index = self.segments.at(len_category, segment_index);
                 if candidate_range.contains(&query_index) {
-                    let subquery_range = query_index..query_index + len;
+                    let query_index = query_index as usize;
+                    let subquery_range = query_index..query_index + len as usize;
                     let subquery = &self.query[subquery_range];
-                    let node: &HSTreeNode = &self.level.nodes[coords.sibling_index];
+                    let node: &HSTreeNode = &self.level.nodes[coords.sibling_index as usize];
                     insert(self.matches, node);
                 }
             }
@@ -313,7 +365,7 @@ impl MatchFinder {
     }
 }
 
-impl HSLengthGroup {
+impl HSLengthGroup<'_> {
     /// Create a length group with correctly sized levels
     fn new(length: u32) -> HSLengthGroup {
         let mut group: HSLengthGroup;
@@ -430,6 +482,48 @@ impl HSLengthGroup {
     }
 }
 
+/// Structure that associates a string with its Levenshtein distance from the query
+#[derive(PartialEq, Eq, PartialOrd)]
+pub struct MeasuredString {
+    pub string: String,
+    pub distance: u32,
+}
+
+impl Ord for MeasuredString {
+    /// Compare the edit distances for MeasuredString
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.distance.cmp(&other.distance)
+    }
+}
+
+/// Structure that holds at most `limit` of the strings closest to the query
+pub struct Rankings {
+    best: BinaryHeap<MeasuredString>,
+    limit: u32,
+}
+
+impl Rankings {
+    /// Returns a threshold for the Levenshtein distance for a string to be placed into the best results
+    fn threshold(&self) -> u32 {
+        // we don't have enough results yet to limit our Levenshtein distance
+        if self.best.len() < self.limit as usize {
+            u32::MAX
+        }
+        // we won't accept any distance worse than the worst so far in the top-k
+        else {
+            // this will fail if best.len() is 0 and limit is also 0
+            let worst = self.best.peek().unwrap();
+            worst.distance
+        }
+    }
+    fn new(limit: u32) -> Rankings {
+        Rankings {
+            best: Default::default(),
+            limit,
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct HSTree {
     // indexed by length, then depth, then sibling number
@@ -448,5 +542,23 @@ impl HSTree {
                 group.insert(string);
                 group
             });
+    }
+    /// Returns up to `limit` strings with the closest Levenshtein distance to `query`,
+    /// The result is sorted by ascending Levenshtein distance
+    pub fn top(&self, query: &str, limit: u32) -> Vec<MeasuredString> {
+        let mut best = Rankings::new(limit);
+        let mut upper_bound = u32::MAX;
+        for i in 0..query.len() {
+            if (1 << i) >= (upper_bound + 1) {
+                break;
+            }
+            // saturating sub/add prevents under/overflow
+            for length in (query.len().saturating_sub(upper_bound))
+                ..=(query.len().saturating_add(upper_bound))
+            {
+                if let Some(group) = &self.tree.groups.get(length) {}
+            }
+        }
+        best.into_sorted_vec()
     }
 }
