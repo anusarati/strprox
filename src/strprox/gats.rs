@@ -20,6 +20,7 @@ pub trait MapGAT {
     type Map<K, V>: IterableMap<K = K, V = V>;
 }
 
+#[derive(Clone)]
 pub enum HashMapGAT {}
 
 impl MapGAT for HashMapGAT {
