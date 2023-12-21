@@ -1,10 +1,10 @@
+use priority_queue::PriorityQueue;
 use std::{
-    cmp::min,
+    cmp::{min, Reverse},
     collections::{BTreeSet, HashMap},
     ops::Range,
     string,
 };
-use priority_queue::PriorityQueue;
 
 use super::{MeasuredPrefix, MeasuredString};
 
@@ -256,10 +256,7 @@ impl<'stored> Trie<'stored, UUU> {
         let query: Vec<char> = query.chars().collect();
 
         let mut result = HashMap::<&'stored str, MatchingNode<UUU>>::new();
-        let mut priority_queue = PriorityQueue::<&Node<UUU>, MatchingNode<UUU>>::new();
-        // using BTreeSet instead of BinaryHeap because removal by value is required
-        // ideally, first() and pop_first() would be O(1)
-        let mut priority_queue = BTreeSet::<MatchingNode<UUU>>::new();
+        let mut priority_queue = PriorityQueue::<&Node<UUU>, Reverse<MatchingNode<UUU>>>::new();
         let matching_node = MatchingNode::<UUU> {
             node_id: 0, // the root is at index 0
             //query_match_index: 0,
@@ -267,22 +264,17 @@ impl<'stored> Trie<'stored, UUU> {
             checked_len: 0,
             edit_distance: 0,
         };
-        priority_queue.insert(matching_node);
-
-        let mut map = HashMap::<&Node<UUU>, MatchingNode<UUU>>::new();
+        priority_queue.push(self.root(), Reverse(matching_node));
 
         while result.len() < requested {
-            if let Some(mut matching_node) = priority_queue.pop_first() {
+            if let Some((node, Reverse(mut matching_node))) = priority_queue.pop() {
+                println!("Popped {:#?} {:#?}", node, matching_node);
                 if (matching_node.checked_len as usize) < query.len() {
-                    self.check_descendants(
-                        query.as_slice(),
-                        &matching_node,
-                        &mut priority_queue,
-                        &mut map,
-                    );
+                    self.check_descendants(query.as_slice(), &matching_node, &mut priority_queue);
                     matching_node.checked_len += 1;
                     matching_node.edit_distance += 1;
-                    priority_queue.insert(matching_node);
+                    priority_queue.push(node, Reverse(matching_node));
+                    println!("Pushed {:#?} {:#?} from advance", node, matching_node);
                 } else {
                     self.get_matching_node_strings(&matching_node, &mut result, requested);
                 }
@@ -308,8 +300,7 @@ impl<'stored> Trie<'stored, UUU> {
         &'stored self,
         query: &[char],
         matching_node: &MatchingNode<UUU>,
-        priority_queue: &mut BTreeSet<MatchingNode<UUU>>,
-        map: &mut HashMap<&'stored Node<UUU>, MatchingNode<UUU>>,
+        priority_queue: &mut PriorityQueue<&'stored Node<UUU>, Reverse<MatchingNode<UUU>>>,
     ) {
         let node = &self.nodes[matching_node.node_id];
 
@@ -317,12 +308,16 @@ impl<'stored> Trie<'stored, UUU> {
 
         // there may be an edge case for a long query whose length is close to UUU::MAX
         // where UUU can overflow and cause incorrect results without being cast to usize
-        let depth_threshold = node.depth as usize + matching_node.edit_distance as usize + 1 + ERROR;
+        // depth_threshold seems to be designed to look at the next nodes that can match from the
+        // edited prefix
+        let depth_threshold =
+            node.depth as usize + matching_node.edit_distance as usize + 1 + ERROR;
 
         let mut descendant_index = node.descendant_range.start;
         while descendant_index != node.descendant_range.end {
             let descendant = &self.nodes[descendant_index];
             if descendant.depth as usize > depth_threshold {
+                println!("depth {} depth_threshold {}", descendant.depth, depth_threshold);
                 debug_assert!(descendant_index < descendant.descendant_range.end);
                 // all descendants of `descendant` have a larger depth, so skip them
                 descendant_index = descendant.descendant_range.end;
@@ -346,20 +341,24 @@ impl<'stored> Trie<'stored, UUU> {
                     edit_distance: new_edit_distance,
                 };
                 // lines 10-15 from DFA
-                if let Some(prior_matching_node) = map.get_mut(descendant) {
-                    // this is effectively a way of computing the minimum edit distance between the prefixes
+                if let Some((_, Reverse(prior_matching_node))) = priority_queue.remove(descendant) {
+                    // this seems to be a way of computing the minimum edit distance between the prefixes
                     if new_edit_distance < prior_matching_node.edit_distance {
-                        let removed = priority_queue.remove(prior_matching_node);
-                        debug_assert!(removed);
-
-                        let inserted = priority_queue.insert(new_matching_node);
-                        debug_assert!(inserted);
-                        *prior_matching_node = new_matching_node;
+                        priority_queue.push(descendant, Reverse(new_matching_node));
+                        println!(
+                            "Changed priority of {:#?} from {:#?} to {:#?}",
+                            descendant, prior_matching_node, new_matching_node
+                        );
+                    } else {
+                        priority_queue.push(descendant, Reverse(prior_matching_node));
                     }
                 } else {
                     // lines 7-9
-                    map.insert(descendant, new_matching_node);
-                    priority_queue.insert(new_matching_node);
+                    priority_queue.push(descendant, Reverse(new_matching_node));
+                    println!(
+                        "Pushed {:#?} {:#?} from check_descendants",
+                        descendant, new_matching_node
+                    );
                 }
             }
             descendant_index += 1;

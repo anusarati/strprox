@@ -1,0 +1,1626 @@
+warning: unused imports: `BTreeSet`, `min`, `string`
+ --> src/strprox/prefix/mod.rs:3:11
+  |
+3 |     cmp::{min, Reverse},
+  |           ^^^
+4 |     collections::{BTreeSet, HashMap},
+  |                   ^^^^^^^^
+5 |     ops::Range,
+6 |     string,
+  |     ^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused imports: `MeasuredPrefix`, `MeasuredString`
+ --> src/strprox/prefix/mod.rs:9:13
+  |
+9 | use super::{MeasuredPrefix, MeasuredString};
+  |             ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^
+
+warning: unused import: `fmt::Display`
+ --> src/strprox.rs:3:26
+  |
+3 | use std::{cmp::Ordering, fmt::Display};
+  |                          ^^^^^^^^^^^^
+
+warning: unused import: `Duration`
+ --> src/tests/mod.rs:3:12
+  |
+3 |     time::{Duration, Instant},
+  |            ^^^^^^^^
+
+warning: function cannot return without recursing
+  --> src/strprox/gats.rs:10:5
+   |
+10 |     fn iter<'a>(&self) -> Self::Iter<'a> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ cannot return without recursing
+11 |         self.iter()
+   |         ----------- recursive call site
+   |
+   = help: a `loop` may express intention better if this is on purpose
+   = note: `#[warn(unconditional_recursion)]` on by default
+
+warning: type `MatchingNode<u8>` is more private than the item `Trie::<'stored, u8>::autocomplete`
+   --> src/strprox/prefix/mod.rs:249:5
+    |
+249 |     pub fn autocomplete(&self, query: &str, requested: usize) -> Vec<(String, MatchingNode<UUU>)> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ method `Trie::<'stored, u8>::autocomplete` is reachable at visibility `pub`
+    |
+note: but type `MatchingNode<u8>` is only usable at visibility `pub(crate)`
+   --> src/strprox/prefix/mod.rs:52:1
+    |
+52  | pub(crate) struct MatchingNode<UUU> {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = note: `#[warn(private_interfaces)]` on by default
+
+warning: methods `preorder` and `preorder_node` are never used
+   --> src/strprox/prefix/mod.rs:230:8
+    |
+84  | impl<'stored> Trie<'stored, UUU> {
+    | -------------------------------- methods in this implementation
+...
+230 |     fn preorder<VisitorFn>(&self, visitor: &mut VisitorFn)
+    |        ^^^^^^^^
+...
+237 |     fn preorder_node<VisitorFn>(&self, visitor: &mut VisitorFn, node: &Node<UUU>)
+    |        ^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: `strprox` (lib test) generated 7 warnings (run `cargo fix --lib -p strprox --tests` to apply 4 suggestions)
+    Finished test [unoptimized + debuginfo] target(s) in 0.00s
+     Running unittests src/lib.rs (target/debug/deps/strprox-ee2c8ab06e82454a)
+
+running 1 test
+test tests::two_categories ... FAILED
+
+failures:
+
+---- tests::two_categories stdout ----
+Popped Node {
+    character: '\0',
+    descendant_range: 1..42,
+    string_range: 0..7,
+    depth: 0,
+} MatchingNode {
+    node_id: 0,
+    checked_len: 0,
+    edit_distance: 0,
+}
+Pushed Node {
+    character: 'a',
+    descendant_range: 2..8,
+    string_range: 0..1,
+    depth: 1,
+} MatchingNode {
+    node_id: 1,
+    checked_len: 1,
+    edit_distance: 0,
+} from check_descendants
+depth 2 depth_threshold 1
+depth 2 depth_threshold 1
+depth 2 depth_threshold 1
+depth 2 depth_threshold 1
+depth 2 depth_threshold 1
+depth 2 depth_threshold 1
+Pushed Node {
+    character: '\0',
+    descendant_range: 1..42,
+    string_range: 0..7,
+    depth: 0,
+} MatchingNode {
+    node_id: 0,
+    checked_len: 1,
+    edit_distance: 1,
+} from advance
+Popped Node {
+    character: 'a',
+    descendant_range: 2..8,
+    string_range: 0..1,
+    depth: 1,
+} MatchingNode {
+    node_id: 1,
+    checked_len: 1,
+    edit_distance: 0,
+}
+depth 3 depth_threshold 2
+Pushed Node {
+    character: 'a',
+    descendant_range: 2..8,
+    string_range: 0..1,
+    depth: 1,
+} MatchingNode {
+    node_id: 1,
+    checked_len: 2,
+    edit_distance: 1,
+} from advance
+Popped Node {
+    character: 'a',
+    descendant_range: 2..8,
+    string_range: 0..1,
+    depth: 1,
+} MatchingNode {
+    node_id: 1,
+    checked_len: 2,
+    edit_distance: 1,
+}
+Pushed Node {
+    character: 'a',
+    descendant_range: 4..8,
+    string_range: 0..1,
+    depth: 3,
+} MatchingNode {
+    node_id: 3,
+    checked_len: 3,
+    edit_distance: 2,
+} from check_descendants
+depth 4 depth_threshold 3
+Pushed Node {
+    character: 'a',
+    descendant_range: 2..8,
+    string_range: 0..1,
+    depth: 1,
+} MatchingNode {
+    node_id: 1,
+    checked_len: 3,
+    edit_distance: 2,
+} from advance
+Popped Node {
+    character: '\0',
+    descendant_range: 1..42,
+    string_range: 0..7,
+    depth: 0,
+} MatchingNode {
+    node_id: 0,
+    checked_len: 1,
+    edit_distance: 1,
+}
+depth 3 depth_threshold 2
+Pushed Node {
+    character: 'b',
+    descendant_range: 9..21,
+    string_range: 1..3,
+    depth: 1,
+} MatchingNode {
+    node_id: 8,
+    checked_len: 2,
+    edit_distance: 1,
+} from check_descendants
+depth 3 depth_threshold 2
+depth 3 depth_threshold 2
+depth 3 depth_threshold 2
+depth 3 depth_threshold 2
+depth 3 depth_threshold 2
+Pushed Node {
+    character: '\0',
+    descendant_range: 1..42,
+    string_range: 0..7,
+    depth: 0,
+} MatchingNode {
+    node_id: 0,
+    checked_len: 2,
+    edit_distance: 2,
+} from advance
+Popped Node {
+    character: 'b',
+    descendant_range: 9..21,
+    string_range: 1..3,
+    depth: 1,
+} MatchingNode {
+    node_id: 8,
+    checked_len: 2,
+    edit_distance: 1,
+}
+Pushed Node {
+    character: 'a',
+    descendant_range: 10..14,
+    string_range: 1..2,
+    depth: 2,
+} MatchingNode {
+    node_id: 9,
+    checked_len: 3,
+    edit_distance: 1,
+} from check_descendants
+depth 4 depth_threshold 3
+depth 4 depth_threshold 3
+Pushed Node {
+    character: 'b',
+    descendant_range: 9..21,
+    string_range: 1..3,
+    depth: 1,
+} MatchingNode {
+    node_id: 8,
+    checked_len: 3,
+    edit_distance: 2,
+} from advance
+Popped Node {
+    character: 'a',
+    descendant_range: 10..14,
+    string_range: 1..2,
+    depth: 2,
+} MatchingNode {
+    node_id: 9,
+    checked_len: 3,
+    edit_distance: 1,
+}
+depth 5 depth_threshold 4
+Pushed Node {
+    character: 'a',
+    descendant_range: 10..14,
+    string_range: 1..2,
+    depth: 2,
+} MatchingNode {
+    node_id: 9,
+    checked_len: 4,
+    edit_distance: 2,
+} from advance
+Popped Node {
+    character: 'a',
+    descendant_range: 10..14,
+    string_range: 1..2,
+    depth: 2,
+} MatchingNode {
+    node_id: 9,
+    checked_len: 4,
+    edit_distance: 2,
+}
+Pushed Node {
+    character: 'a',
+    descendant_range: 12..14,
+    string_range: 1..2,
+    depth: 4,
+} MatchingNode {
+    node_id: 11,
+    checked_len: 5,
+    edit_distance: 3,
+} from check_descendants
+depth 6 depth_threshold 5
+Pushed Node {
+    character: 'a',
+    descendant_range: 10..14,
+    string_range: 1..2,
+    depth: 2,
+} MatchingNode {
+    node_id: 9,
+    checked_len: 5,
+    edit_distance: 3,
+} from advance
+Popped Node {
+    character: 'a',
+    descendant_range: 2..8,
+    string_range: 0..1,
+    depth: 1,
+} MatchingNode {
+    node_id: 1,
+    checked_len: 3,
+    edit_distance: 2,
+}
+Pushed Node {
+    character: 'b',
+    descendant_range: 5..8,
+    string_range: 0..1,
+    depth: 4,
+} MatchingNode {
+    node_id: 4,
+    checked_len: 4,
+    edit_distance: 4,
+} from check_descendants
+depth 5 depth_threshold 4
+Pushed Node {
+    character: 'a',
+    descendant_range: 2..8,
+    string_range: 0..1,
+    depth: 1,
+} MatchingNode {
+    node_id: 1,
+    checked_len: 4,
+    edit_distance: 3,
+} from advance
+Popped Node {
+    character: 'a',
+    descendant_range: 4..8,
+    string_range: 0..1,
+    depth: 3,
+} MatchingNode {
+    node_id: 3,
+    checked_len: 3,
+    edit_distance: 2,
+}
+Changed priority of Node {
+    character: 'b',
+    descendant_range: 5..8,
+    string_range: 0..1,
+    depth: 4,
+} from MatchingNode {
+    node_id: 4,
+    checked_len: 4,
+    edit_distance: 4,
+} to MatchingNode {
+    node_id: 4,
+    checked_len: 4,
+    edit_distance: 2,
+}
+depth 7 depth_threshold 6
+Pushed Node {
+    character: 'a',
+    descendant_range: 4..8,
+    string_range: 0..1,
+    depth: 3,
+} MatchingNode {
+    node_id: 3,
+    checked_len: 4,
+    edit_distance: 3,
+} from advance
+Popped Node {
+    character: 'b',
+    descendant_range: 5..8,
+    string_range: 0..1,
+    depth: 4,
+} MatchingNode {
+    node_id: 4,
+    checked_len: 4,
+    edit_distance: 2,
+}
+Pushed Node {
+    character: 'a',
+    descendant_range: 6..8,
+    string_range: 0..1,
+    depth: 5,
+} MatchingNode {
+    node_id: 5,
+    checked_len: 5,
+    edit_distance: 2,
+} from check_descendants
+Pushed Node {
+    character: 'a',
+    descendant_range: 8..8,
+    string_range: 0..1,
+    depth: 7,
+} MatchingNode {
+    node_id: 7,
+    checked_len: 5,
+    edit_distance: 4,
+} from check_descendants
+Pushed Node {
+    character: 'b',
+    descendant_range: 5..8,
+    string_range: 0..1,
+    depth: 4,
+} MatchingNode {
+    node_id: 4,
+    checked_len: 5,
+    edit_distance: 3,
+} from advance
+Popped Node {
+    character: 'a',
+    descendant_range: 6..8,
+    string_range: 0..1,
+    depth: 5,
+} MatchingNode {
+    node_id: 5,
+    checked_len: 5,
+    edit_distance: 2,
+}
+Popped Node {
+    character: 'b',
+    descendant_range: 9..21,
+    string_range: 1..3,
+    depth: 1,
+} MatchingNode {
+    node_id: 8,
+    checked_len: 3,
+    edit_distance: 2,
+}
+depth 5 depth_threshold 4
+depth 5 depth_threshold 4
+Pushed Node {
+    character: 'b',
+    descendant_range: 9..21,
+    string_range: 1..3,
+    depth: 1,
+} MatchingNode {
+    node_id: 8,
+    checked_len: 4,
+    edit_distance: 3,
+} from advance
+Popped Node {
+    character: '\0',
+    descendant_range: 1..42,
+    string_range: 0..7,
+    depth: 0,
+} MatchingNode {
+    node_id: 0,
+    checked_len: 2,
+    edit_distance: 2,
+}
+Changed priority of Node {
+    character: 'a',
+    descendant_range: 2..8,
+    string_range: 0..1,
+    depth: 1,
+} from MatchingNode {
+    node_id: 1,
+    checked_len: 4,
+    edit_distance: 3,
+} to MatchingNode {
+    node_id: 1,
+    checked_len: 3,
+    edit_distance: 2,
+}
+depth 4 depth_threshold 3
+depth 4 depth_threshold 3
+depth 4 depth_threshold 3
+Pushed Node {
+    character: 'a',
+    descendant_range: 23..27,
+    string_range: 3..4,
+    depth: 2,
+} MatchingNode {
+    node_id: 22,
+    checked_len: 3,
+    edit_distance: 3,
+} from check_descendants
+depth 4 depth_threshold 3
+Pushed Node {
+    character: 'a',
+    descendant_range: 30..37,
+    string_range: 4..6,
+    depth: 3,
+} MatchingNode {
+    node_id: 29,
+    checked_len: 3,
+    edit_distance: 4,
+} from check_descendants
+depth 4 depth_threshold 3
+Pushed Node {
+    character: 'a',
+    descendant_range: 39..42,
+    string_range: 6..7,
+    depth: 2,
+} MatchingNode {
+    node_id: 38,
+    checked_len: 3,
+    edit_distance: 3,
+} from check_descendants
+depth 4 depth_threshold 3
+Pushed Node {
+    character: '\0',
+    descendant_range: 1..42,
+    string_range: 0..7,
+    depth: 0,
+} MatchingNode {
+    node_id: 0,
+    checked_len: 3,
+    edit_distance: 3,
+} from advance
+Popped Node {
+    character: 'a',
+    descendant_range: 2..8,
+    string_range: 0..1,
+    depth: 1,
+} MatchingNode {
+    node_id: 1,
+    checked_len: 3,
+    edit_distance: 2,
+}
+depth 5 depth_threshold 4
+Pushed Node {
+    character: 'a',
+    descendant_range: 2..8,
+    string_range: 0..1,
+    depth: 1,
+} MatchingNode {
+    node_id: 1,
+    checked_len: 4,
+    edit_distance: 3,
+} from advance
+Popped Node {
+    character: 'b',
+    descendant_range: 5..8,
+    string_range: 0..1,
+    depth: 4,
+} MatchingNode {
+    node_id: 4,
+    checked_len: 5,
+    edit_distance: 3,
+}
+Popped Node {
+    character: 'a',
+    descendant_range: 10..14,
+    string_range: 1..2,
+    depth: 2,
+} MatchingNode {
+    node_id: 9,
+    checked_len: 5,
+    edit_distance: 3,
+}
+Popped Node {
+    character: 'a',
+    descendant_range: 12..14,
+    string_range: 1..2,
+    depth: 4,
+} MatchingNode {
+    node_id: 11,
+    checked_len: 5,
+    edit_distance: 3,
+}
+Popped Node {
+    character: 'a',
+    descendant_range: 2..8,
+    string_range: 0..1,
+    depth: 1,
+} MatchingNode {
+    node_id: 1,
+    checked_len: 4,
+    edit_distance: 3,
+}
+Pushed Node {
+    character: 'a',
+    descendant_range: 6..8,
+    string_range: 0..1,
+    depth: 5,
+} MatchingNode {
+    node_id: 5,
+    checked_len: 5,
+    edit_distance: 6,
+} from check_descendants
+depth 6 depth_threshold 5
+Pushed Node {
+    character: 'a',
+    descendant_range: 2..8,
+    string_range: 0..1,
+    depth: 1,
+} MatchingNode {
+    node_id: 1,
+    checked_len: 5,
+    edit_distance: 4,
+} from advance
+Popped Node {
+    character: 'a',
+    descendant_range: 4..8,
+    string_range: 0..1,
+    depth: 3,
+} MatchingNode {
+    node_id: 3,
+    checked_len: 4,
+    edit_distance: 3,
+}
+Changed priority of Node {
+    character: 'a',
+    descendant_range: 6..8,
+    string_range: 0..1,
+    depth: 5,
+} from MatchingNode {
+    node_id: 5,
+    checked_len: 5,
+    edit_distance: 6,
+} to MatchingNode {
+    node_id: 5,
+    checked_len: 5,
+    edit_distance: 4,
+}
+Pushed Node {
+    character: 'a',
+    descendant_range: 4..8,
+    string_range: 0..1,
+    depth: 3,
+} MatchingNode {
+    node_id: 3,
+    checked_len: 5,
+    edit_distance: 4,
+} from advance
+Popped Node {
+    character: 'b',
+    descendant_range: 9..21,
+    string_range: 1..3,
+    depth: 1,
+} MatchingNode {
+    node_id: 8,
+    checked_len: 4,
+    edit_distance: 3,
+}
+Pushed Node {
+    character: 'a',
+    descendant_range: 10..14,
+    string_range: 1..2,
+    depth: 2,
+} MatchingNode {
+    node_id: 9,
+    checked_len: 5,
+    edit_distance: 3,
+} from check_descendants
+Pushed Node {
+    character: 'a',
+    descendant_range: 12..14,
+    string_range: 1..2,
+    depth: 4,
+} MatchingNode {
+    node_id: 11,
+    checked_len: 5,
+    edit_distance: 5,
+} from check_descendants
+depth 6 depth_threshold 5
+Pushed Node {
+    character: 'a',
+    descendant_range: 18..21,
+    string_range: 2..3,
+    depth: 5,
+} MatchingNode {
+    node_id: 17,
+    checked_len: 5,
+    edit_distance: 6,
+} from check_descendants
+depth 6 depth_threshold 5
+Pushed Node {
+    character: 'b',
+    descendant_range: 9..21,
+    string_range: 1..3,
+    depth: 1,
+} MatchingNode {
+    node_id: 8,
+    checked_len: 5,
+    edit_distance: 4,
+} from advance
+Popped Node {
+    character: 'a',
+    descendant_range: 10..14,
+    string_range: 1..2,
+    depth: 2,
+} MatchingNode {
+    node_id: 9,
+    checked_len: 5,
+    edit_distance: 3,
+}
+Popped Node {
+    character: '\0',
+    descendant_range: 1..42,
+    string_range: 0..7,
+    depth: 0,
+} MatchingNode {
+    node_id: 0,
+    checked_len: 3,
+    edit_distance: 3,
+}
+Pushed Node {
+    character: 'b',
+    descendant_range: 5..8,
+    string_range: 0..1,
+    depth: 4,
+} MatchingNode {
+    node_id: 4,
+    checked_len: 4,
+    edit_distance: 6,
+} from check_descendants
+depth 5 depth_threshold 4
+Changed priority of Node {
+    character: 'b',
+    descendant_range: 9..21,
+    string_range: 1..3,
+    depth: 1,
+} from MatchingNode {
+    node_id: 8,
+    checked_len: 5,
+    edit_distance: 4,
+} to MatchingNode {
+    node_id: 8,
+    checked_len: 4,
+    edit_distance: 3,
+}
+depth 5 depth_threshold 4
+depth 5 depth_threshold 4
+Pushed Node {
+    character: 'b',
+    descendant_range: 24..27,
+    string_range: 3..4,
+    depth: 3,
+} MatchingNode {
+    node_id: 23,
+    checked_len: 4,
+    edit_distance: 5,
+} from check_descendants
+depth 5 depth_threshold 4
+depth 5 depth_threshold 4
+depth 5 depth_threshold 4
+Pushed Node {
+    character: '\0',
+    descendant_range: 1..42,
+    string_range: 0..7,
+    depth: 0,
+} MatchingNode {
+    node_id: 0,
+    checked_len: 4,
+    edit_distance: 4,
+} from advance
+Popped Node {
+    character: 'b',
+    descendant_range: 9..21,
+    string_range: 1..3,
+    depth: 1,
+} MatchingNode {
+    node_id: 8,
+    checked_len: 4,
+    edit_distance: 3,
+}
+Pushed Node {
+    character: 'a',
+    descendant_range: 10..14,
+    string_range: 1..2,
+    depth: 2,
+} MatchingNode {
+    node_id: 9,
+    checked_len: 5,
+    edit_distance: 3,
+} from check_descendants
+depth 6 depth_threshold 5
+depth 6 depth_threshold 5
+Pushed Node {
+    character: 'b',
+    descendant_range: 9..21,
+    string_range: 1..3,
+    depth: 1,
+} MatchingNode {
+    node_id: 8,
+    checked_len: 5,
+    edit_distance: 4,
+} from advance
+Popped Node {
+    character: 'a',
+    descendant_range: 10..14,
+    string_range: 1..2,
+    depth: 2,
+} MatchingNode {
+    node_id: 9,
+    checked_len: 5,
+    edit_distance: 3,
+}
+Popped Node {
+    character: 'a',
+    descendant_range: 23..27,
+    string_range: 3..4,
+    depth: 2,
+} MatchingNode {
+    node_id: 22,
+    checked_len: 3,
+    edit_distance: 3,
+}
+Changed priority of Node {
+    character: 'b',
+    descendant_range: 24..27,
+    string_range: 3..4,
+    depth: 3,
+} from MatchingNode {
+    node_id: 23,
+    checked_len: 4,
+    edit_distance: 5,
+} to MatchingNode {
+    node_id: 23,
+    checked_len: 4,
+    edit_distance: 3,
+}
+Pushed Node {
+    character: 'a',
+    descendant_range: 23..27,
+    string_range: 3..4,
+    depth: 2,
+} MatchingNode {
+    node_id: 22,
+    checked_len: 4,
+    edit_distance: 4,
+} from advance
+Popped Node {
+    character: 'b',
+    descendant_range: 24..27,
+    string_range: 3..4,
+    depth: 3,
+} MatchingNode {
+    node_id: 23,
+    checked_len: 4,
+    edit_distance: 3,
+}
+Pushed Node {
+    character: 'a',
+    descendant_range: 25..27,
+    string_range: 3..4,
+    depth: 4,
+} MatchingNode {
+    node_id: 24,
+    checked_len: 5,
+    edit_distance: 3,
+} from check_descendants
+Pushed Node {
+    character: 'a',
+    descendant_range: 27..27,
+    string_range: 3..4,
+    depth: 6,
+} MatchingNode {
+    node_id: 26,
+    checked_len: 5,
+    edit_distance: 5,
+} from check_descendants
+Pushed Node {
+    character: 'b',
+    descendant_range: 24..27,
+    string_range: 3..4,
+    depth: 3,
+} MatchingNode {
+    node_id: 23,
+    checked_len: 5,
+    edit_distance: 4,
+} from advance
+Popped Node {
+    character: 'a',
+    descendant_range: 25..27,
+    string_range: 3..4,
+    depth: 4,
+} MatchingNode {
+    node_id: 24,
+    checked_len: 5,
+    edit_distance: 3,
+}
+ababa
+
+(
+    "alabama",
+    MatchingNode {
+        node_id: 4,
+        checked_len: 5,
+        edit_distance: 3,
+    },
+)
+(
+    "banana",
+    MatchingNode {
+        node_id: 9,
+        checked_len: 5,
+        edit_distance: 3,
+    },
+)
+(
+    "labana",
+    MatchingNode {
+        node_id: 24,
+        checked_len: 5,
+        edit_distance: 3,
+    },
+)
+Popped Node {
+    character: '\0',
+    descendant_range: 1..42,
+    string_range: 0..7,
+    depth: 0,
+} MatchingNode {
+    node_id: 0,
+    checked_len: 0,
+    edit_distance: 0,
+}
+depth 2 depth_threshold 1
+depth 2 depth_threshold 1
+depth 2 depth_threshold 1
+depth 2 depth_threshold 1
+Pushed Node {
+    character: 'o',
+    descendant_range: 28..37,
+    string_range: 4..6,
+    depth: 1,
+} MatchingNode {
+    node_id: 27,
+    checked_len: 1,
+    edit_distance: 0,
+} from check_descendants
+depth 2 depth_threshold 1
+depth 2 depth_threshold 1
+Pushed Node {
+    character: '\0',
+    descendant_range: 1..42,
+    string_range: 0..7,
+    depth: 0,
+} MatchingNode {
+    node_id: 0,
+    checked_len: 1,
+    edit_distance: 1,
+} from advance
+Popped Node {
+    character: 'o',
+    descendant_range: 28..37,
+    string_range: 4..6,
+    depth: 1,
+} MatchingNode {
+    node_id: 27,
+    checked_len: 1,
+    edit_distance: 0,
+}
+depth 3 depth_threshold 2
+Pushed Node {
+    character: 'o',
+    descendant_range: 28..37,
+    string_range: 4..6,
+    depth: 1,
+} MatchingNode {
+    node_id: 27,
+    checked_len: 2,
+    edit_distance: 1,
+} from advance
+Popped Node {
+    character: 'o',
+    descendant_range: 28..37,
+    string_range: 4..6,
+    depth: 1,
+} MatchingNode {
+    node_id: 27,
+    checked_len: 2,
+    edit_distance: 1,
+}
+depth 4 depth_threshold 3
+Pushed Node {
+    character: 'o',
+    descendant_range: 28..37,
+    string_range: 4..6,
+    depth: 1,
+} MatchingNode {
+    node_id: 27,
+    checked_len: 3,
+    edit_distance: 2,
+} from advance
+Popped Node {
+    character: '\0',
+    descendant_range: 1..42,
+    string_range: 0..7,
+    depth: 0,
+} MatchingNode {
+    node_id: 0,
+    checked_len: 1,
+    edit_distance: 1,
+}
+Pushed Node {
+    character: 'a',
+    descendant_range: 2..8,
+    string_range: 0..1,
+    depth: 1,
+} MatchingNode {
+    node_id: 1,
+    checked_len: 2,
+    edit_distance: 1,
+} from check_descendants
+depth 3 depth_threshold 2
+Pushed Node {
+    character: 'a',
+    descendant_range: 10..14,
+    string_range: 1..2,
+    depth: 2,
+} MatchingNode {
+    node_id: 9,
+    checked_len: 2,
+    edit_distance: 2,
+} from check_descendants
+depth 3 depth_threshold 2
+depth 3 depth_threshold 2
+Pushed Node {
+    character: 'a',
+    descendant_range: 23..27,
+    string_range: 3..4,
+    depth: 2,
+} MatchingNode {
+    node_id: 22,
+    checked_len: 2,
+    edit_distance: 2,
+} from check_descendants
+depth 3 depth_threshold 2
+depth 3 depth_threshold 2
+Pushed Node {
+    character: 'a',
+    descendant_range: 39..42,
+    string_range: 6..7,
+    depth: 2,
+} MatchingNode {
+    node_id: 38,
+    checked_len: 2,
+    edit_distance: 2,
+} from check_descendants
+depth 3 depth_threshold 2
+Pushed Node {
+    character: '\0',
+    descendant_range: 1..42,
+    string_range: 0..7,
+    depth: 0,
+} MatchingNode {
+    node_id: 0,
+    checked_len: 2,
+    edit_distance: 2,
+} from advance
+Popped Node {
+    character: 'a',
+    descendant_range: 2..8,
+    string_range: 0..1,
+    depth: 1,
+} MatchingNode {
+    node_id: 1,
+    checked_len: 2,
+    edit_distance: 1,
+}
+depth 4 depth_threshold 3
+Pushed Node {
+    character: 'a',
+    descendant_range: 2..8,
+    string_range: 0..1,
+    depth: 1,
+} MatchingNode {
+    node_id: 1,
+    checked_len: 3,
+    edit_distance: 2,
+} from advance
+Popped Node {
+    character: 'a',
+    descendant_range: 2..8,
+    string_range: 0..1,
+    depth: 1,
+} MatchingNode {
+    node_id: 1,
+    checked_len: 3,
+    edit_distance: 2,
+}
+depth 5 depth_threshold 4
+Pushed Node {
+    character: 'a',
+    descendant_range: 2..8,
+    string_range: 0..1,
+    depth: 1,
+} MatchingNode {
+    node_id: 1,
+    checked_len: 4,
+    edit_distance: 3,
+} from advance
+Popped Node {
+    character: 'o',
+    descendant_range: 28..37,
+    string_range: 4..6,
+    depth: 1,
+} MatchingNode {
+    node_id: 27,
+    checked_len: 3,
+    edit_distance: 2,
+}
+depth 5 depth_threshold 4
+Pushed Node {
+    character: 'o',
+    descendant_range: 28..37,
+    string_range: 4..6,
+    depth: 1,
+} MatchingNode {
+    node_id: 27,
+    checked_len: 4,
+    edit_distance: 3,
+} from advance
+Popped Node {
+    character: '\0',
+    descendant_range: 1..42,
+    string_range: 0..7,
+    depth: 0,
+} MatchingNode {
+    node_id: 0,
+    checked_len: 2,
+    edit_distance: 2,
+}
+depth 4 depth_threshold 3
+Pushed Node {
+    character: 'n',
+    descendant_range: 11..14,
+    string_range: 1..2,
+    depth: 3,
+} MatchingNode {
+    node_id: 10,
+    checked_len: 3,
+    edit_distance: 4,
+} from check_descendants
+depth 4 depth_threshold 3
+depth 4 depth_threshold 3
+depth 4 depth_threshold 3
+depth 4 depth_threshold 3
+Pushed Node {
+    character: 'n',
+    descendant_range: 40..42,
+    string_range: 6..7,
+    depth: 3,
+} MatchingNode {
+    node_id: 39,
+    checked_len: 3,
+    edit_distance: 4,
+} from check_descendants
+depth 4 depth_threshold 3
+Pushed Node {
+    character: '\0',
+    descendant_range: 1..42,
+    string_range: 0..7,
+    depth: 0,
+} MatchingNode {
+    node_id: 0,
+    checked_len: 3,
+    edit_distance: 3,
+} from advance
+Popped Node {
+    character: 'a',
+    descendant_range: 10..14,
+    string_range: 1..2,
+    depth: 2,
+} MatchingNode {
+    node_id: 9,
+    checked_len: 2,
+    edit_distance: 2,
+}
+Changed priority of Node {
+    character: 'n',
+    descendant_range: 11..14,
+    string_range: 1..2,
+    depth: 3,
+} from MatchingNode {
+    node_id: 10,
+    checked_len: 3,
+    edit_distance: 4,
+} to MatchingNode {
+    node_id: 10,
+    checked_len: 3,
+    edit_distance: 2,
+}
+Pushed Node {
+    character: 'n',
+    descendant_range: 13..14,
+    string_range: 1..2,
+    depth: 5,
+} MatchingNode {
+    node_id: 12,
+    checked_len: 3,
+    edit_distance: 4,
+} from check_descendants
+depth 6 depth_threshold 5
+Pushed Node {
+    character: 'a',
+    descendant_range: 10..14,
+    string_range: 1..2,
+    depth: 2,
+} MatchingNode {
+    node_id: 9,
+    checked_len: 3,
+    edit_distance: 3,
+} from advance
+Popped Node {
+    character: 'n',
+    descendant_range: 11..14,
+    string_range: 1..2,
+    depth: 3,
+} MatchingNode {
+    node_id: 10,
+    checked_len: 3,
+    edit_distance: 2,
+}
+Pushed Node {
+    character: 'n',
+    descendant_range: 11..14,
+    string_range: 1..2,
+    depth: 3,
+} MatchingNode {
+    node_id: 10,
+    checked_len: 4,
+    edit_distance: 3,
+} from advance
+Popped Node {
+    character: 'a',
+    descendant_range: 23..27,
+    string_range: 3..4,
+    depth: 2,
+} MatchingNode {
+    node_id: 22,
+    checked_len: 2,
+    edit_distance: 2,
+}
+Pushed Node {
+    character: 'n',
+    descendant_range: 26..27,
+    string_range: 3..4,
+    depth: 5,
+} MatchingNode {
+    node_id: 25,
+    checked_len: 3,
+    edit_distance: 4,
+} from check_descendants
+depth 6 depth_threshold 5
+Pushed Node {
+    character: 'a',
+    descendant_range: 23..27,
+    string_range: 3..4,
+    depth: 2,
+} MatchingNode {
+    node_id: 22,
+    checked_len: 3,
+    edit_distance: 3,
+} from advance
+Popped Node {
+    character: 'a',
+    descendant_range: 39..42,
+    string_range: 6..7,
+    depth: 2,
+} MatchingNode {
+    node_id: 38,
+    checked_len: 2,
+    edit_distance: 2,
+}
+Changed priority of Node {
+    character: 'n',
+    descendant_range: 40..42,
+    string_range: 6..7,
+    depth: 3,
+} from MatchingNode {
+    node_id: 39,
+    checked_len: 3,
+    edit_distance: 4,
+} to MatchingNode {
+    node_id: 39,
+    checked_len: 3,
+    edit_distance: 2,
+}
+Pushed Node {
+    character: 'a',
+    descendant_range: 39..42,
+    string_range: 6..7,
+    depth: 2,
+} MatchingNode {
+    node_id: 38,
+    checked_len: 3,
+    edit_distance: 3,
+} from advance
+Popped Node {
+    character: 'n',
+    descendant_range: 40..42,
+    string_range: 6..7,
+    depth: 3,
+} MatchingNode {
+    node_id: 39,
+    checked_len: 3,
+    edit_distance: 2,
+}
+Pushed Node {
+    character: 'g',
+    descendant_range: 41..42,
+    string_range: 6..7,
+    depth: 4,
+} MatchingNode {
+    node_id: 40,
+    checked_len: 4,
+    edit_distance: 2,
+} from check_descendants
+Pushed Node {
+    character: 'n',
+    descendant_range: 40..42,
+    string_range: 6..7,
+    depth: 3,
+} MatchingNode {
+    node_id: 39,
+    checked_len: 4,
+    edit_distance: 3,
+} from advance
+Popped Node {
+    character: 'g',
+    descendant_range: 41..42,
+    string_range: 6..7,
+    depth: 4,
+} MatchingNode {
+    node_id: 40,
+    checked_len: 4,
+    edit_distance: 2,
+}
+Pushed Node {
+    character: 'e',
+    descendant_range: 42..42,
+    string_range: 6..7,
+    depth: 5,
+} MatchingNode {
+    node_id: 41,
+    checked_len: 5,
+    edit_distance: 2,
+} from check_descendants
+Pushed Node {
+    character: 'g',
+    descendant_range: 41..42,
+    string_range: 6..7,
+    depth: 4,
+} MatchingNode {
+    node_id: 40,
+    checked_len: 5,
+    edit_distance: 3,
+} from advance
+Popped Node {
+    character: 'e',
+    descendant_range: 42..42,
+    string_range: 6..7,
+    depth: 5,
+} MatchingNode {
+    node_id: 41,
+    checked_len: 5,
+    edit_distance: 2,
+}
+Popped Node {
+    character: 'g',
+    descendant_range: 41..42,
+    string_range: 6..7,
+    depth: 4,
+} MatchingNode {
+    node_id: 40,
+    checked_len: 5,
+    edit_distance: 3,
+}
+Popped Node {
+    character: 'a',
+    descendant_range: 2..8,
+    string_range: 0..1,
+    depth: 1,
+} MatchingNode {
+    node_id: 1,
+    checked_len: 4,
+    edit_distance: 3,
+}
+depth 6 depth_threshold 5
+Pushed Node {
+    character: 'a',
+    descendant_range: 2..8,
+    string_range: 0..1,
+    depth: 1,
+} MatchingNode {
+    node_id: 1,
+    checked_len: 5,
+    edit_distance: 4,
+} from advance
+Popped Node {
+    character: 'n',
+    descendant_range: 11..14,
+    string_range: 1..2,
+    depth: 3,
+} MatchingNode {
+    node_id: 10,
+    checked_len: 4,
+    edit_distance: 3,
+}
+Pushed Node {
+    character: 'n',
+    descendant_range: 11..14,
+    string_range: 1..2,
+    depth: 3,
+} MatchingNode {
+    node_id: 10,
+    checked_len: 5,
+    edit_distance: 4,
+} from advance
+Popped Node {
+    character: 'o',
+    descendant_range: 28..37,
+    string_range: 4..6,
+    depth: 1,
+} MatchingNode {
+    node_id: 27,
+    checked_len: 4,
+    edit_distance: 3,
+}
+depth 6 depth_threshold 5
+depth 6 depth_threshold 5
+Pushed Node {
+    character: 'o',
+    descendant_range: 28..37,
+    string_range: 4..6,
+    depth: 1,
+} MatchingNode {
+    node_id: 27,
+    checked_len: 5,
+    edit_distance: 4,
+} from advance
+Popped Node {
+    character: 'n',
+    descendant_range: 40..42,
+    string_range: 6..7,
+    depth: 3,
+} MatchingNode {
+    node_id: 39,
+    checked_len: 4,
+    edit_distance: 3,
+}
+Pushed Node {
+    character: 'e',
+    descendant_range: 42..42,
+    string_range: 6..7,
+    depth: 5,
+} MatchingNode {
+    node_id: 41,
+    checked_len: 5,
+    edit_distance: 4,
+} from check_descendants
+Pushed Node {
+    character: 'n',
+    descendant_range: 40..42,
+    string_range: 6..7,
+    depth: 3,
+} MatchingNode {
+    node_id: 39,
+    checked_len: 5,
+    edit_distance: 4,
+} from advance
+Popped Node {
+    character: '\0',
+    descendant_range: 1..42,
+    string_range: 0..7,
+    depth: 0,
+} MatchingNode {
+    node_id: 0,
+    checked_len: 3,
+    edit_distance: 3,
+}
+depth 5 depth_threshold 4
+depth 5 depth_threshold 4
+depth 5 depth_threshold 4
+depth 5 depth_threshold 4
+depth 5 depth_threshold 4
+Pushed Node {
+    character: 'g',
+    descendant_range: 41..42,
+    string_range: 6..7,
+    depth: 4,
+} MatchingNode {
+    node_id: 40,
+    checked_len: 4,
+    edit_distance: 6,
+} from check_descendants
+depth 5 depth_threshold 4
+Pushed Node {
+    character: '\0',
+    descendant_range: 1..42,
+    string_range: 0..7,
+    depth: 0,
+} MatchingNode {
+    node_id: 0,
+    checked_len: 4,
+    edit_distance: 4,
+} from advance
+Popped Node {
+    character: 'a',
+    descendant_range: 10..14,
+    string_range: 1..2,
+    depth: 2,
+} MatchingNode {
+    node_id: 9,
+    checked_len: 3,
+    edit_distance: 3,
+}
+Pushed Node {
+    character: 'a',
+    descendant_range: 10..14,
+    string_range: 1..2,
+    depth: 2,
+} MatchingNode {
+    node_id: 9,
+    checked_len: 4,
+    edit_distance: 4,
+} from advance
+Popped Node {
+    character: 'a',
+    descendant_range: 23..27,
+    string_range: 3..4,
+    depth: 2,
+} MatchingNode {
+    node_id: 22,
+    checked_len: 3,
+    edit_distance: 3,
+}
+Pushed Node {
+    character: 'a',
+    descendant_range: 23..27,
+    string_range: 3..4,
+    depth: 2,
+} MatchingNode {
+    node_id: 22,
+    checked_len: 4,
+    edit_distance: 4,
+} from advance
+Popped Node {
+    character: 'a',
+    descendant_range: 39..42,
+    string_range: 6..7,
+    depth: 2,
+} MatchingNode {
+    node_id: 38,
+    checked_len: 3,
+    edit_distance: 3,
+}
+Changed priority of Node {
+    character: 'g',
+    descendant_range: 41..42,
+    string_range: 6..7,
+    depth: 4,
+} from MatchingNode {
+    node_id: 40,
+    checked_len: 4,
+    edit_distance: 6,
+} to MatchingNode {
+    node_id: 40,
+    checked_len: 4,
+    edit_distance: 4,
+}
+Pushed Node {
+    character: 'a',
+    descendant_range: 39..42,
+    string_range: 6..7,
+    depth: 2,
+} MatchingNode {
+    node_id: 38,
+    checked_len: 4,
+    edit_distance: 4,
+} from advance
+Popped Node {
+    character: 'a',
+    descendant_range: 2..8,
+    string_range: 0..1,
+    depth: 1,
+} MatchingNode {
+    node_id: 1,
+    checked_len: 5,
+    edit_distance: 4,
+}
+Popped Node {
+    character: 'n',
+    descendant_range: 11..14,
+    string_range: 1..2,
+    depth: 3,
+} MatchingNode {
+    node_id: 10,
+    checked_len: 5,
+    edit_distance: 4,
+}
+Popped Node {
+    character: 'o',
+    descendant_range: 28..37,
+    string_range: 4..6,
+    depth: 1,
+} MatchingNode {
+    node_id: 27,
+    checked_len: 5,
+    edit_distance: 4,
+}
+oange
+
+(
+    "alabama",
+    MatchingNode {
+        node_id: 1,
+        checked_len: 5,
+        edit_distance: 4,
+    },
+)
+(
+    "banana",
+    MatchingNode {
+        node_id: 10,
+        checked_len: 5,
+        edit_distance: 4,
+    },
+)
+(
+    "orange",
+    MatchingNode {
+        node_id: 27,
+        checked_len: 5,
+        edit_distance: 4,
+    },
+)
+(
+    "range",
+    MatchingNode {
+        node_id: 40,
+        checked_len: 5,
+        edit_distance: 3,
+    },
+)
+thread 'tests::two_categories' panicked at src/tests/mod.rs:57:5:
+assertion failed: result.iter().any(|measure| { measure.0 == \"blorange\" })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::two_categories
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
