@@ -1,6 +1,6 @@
 use priority_queue::PriorityQueue;
 use std::{
-    cmp::{min, Reverse},
+    cmp::{max, min, Reverse},
     collections::{BTreeSet, HashMap},
     ops::Range,
     string,
@@ -29,6 +29,19 @@ struct Node<UUU> {
     depth: UUU,
 }
 
+impl Node<UUU> {
+    /// Returns the index into the trie where the node is
+    #[inline]
+    fn id(&self) -> usize {
+        self.descendant_range.start - 1
+    }
+    #[inline]
+    /// Returns a value equivalent to the id for sorting
+    fn sort_id(&self) -> usize {
+        self.descendant_range.start
+    }
+}
+
 type TrieStrings<'stored> = Vec<&'stored str>;
 type TrieNodes<UUU> = Vec<Node<UUU>>;
 
@@ -44,41 +57,6 @@ pub struct Trie<'stored, UUU> {
 fn char_succ(character: char) -> Option<char> {
     let mut char_range = character..=char::MAX;
     char_range.nth(1)
-}
-
-/// The "matching node" structure from DFA
-// This struct could be more space-efficient if the query's length can be parametrically bounded below usize
-#[derive(Hash, PartialEq, Eq, Clone, Copy, Debug)]
-pub(crate) struct MatchingNode<UUU> {
-    /// Index into the trie's nodes
-    node_id: usize,
-
-    // 1-based index into the query string where the node's character matches
-    // does not appear to actually be used in the algorithm, instead only for illustration
-    //query_match_index: usize,
-    /// The edit distance of the trie string prefix from the query prefix at the seen last match
-    //prefix_edit_distance: UUU,
-    /// The length of the query string prefix that has been checked by the node
-    checked_len: usize,
-    /// The edit distance of the trie string prefix from the query prefix
-    edit_distance: UUU,
-}
-
-impl Ord for MatchingNode<UUU> {
-    /// Order lower edit distances first, then higher query indices first (from DFA),
-    /// then the `node_id` to allow insertion into a set when the other two are equal
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.edit_distance
-            .cmp(&other.edit_distance)
-            .then_with(|| other.checked_len.cmp(&self.checked_len))
-            .then_with(|| self.node_id.cmp(&other.node_id))
-    }
-}
-
-impl PartialOrd for MatchingNode<UUU> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
 }
 
 impl<'stored> Trie<'stored, UUU> {
@@ -244,144 +222,67 @@ impl<'stored> Trie<'stored, UUU> {
             self.preorder_node(visitor, descendant);
         }
     }
+}
+
+/// Inverted index from META
+struct InvertedIndex<'stored, UUU> {
+    /// depth |-> (character |-> nodes in trie)
+    index: Vec<HashMap<char, Vec<&'stored Node<UUU>>>>,
+}
+
+impl<'stored> InvertedIndex<'stored, UUU> {
+    /// Constructs an inverted index from depth to character to nodes using a trie
+    fn new(trie: &Trie<'stored, UUU>) -> Self {
+        let mut max_depth = 0;
+        for node in &trie.nodes {
+            max_depth = max(max_depth, node.depth as usize);
+        }
+
+        let mut index = Vec::<HashMap<char, Vec<&'stored Node<UUU>>>>::with_capacity(max_depth + 1);
+        index.resize(max_depth + 1, Default::default());
+
+        // put all nodes into the index at a certain depth and character
+        for node in &trie.nodes {
+            let depth = node.depth as usize;
+            let char_map = &mut index[depth];
+            if let Some(nodes) = char_map.get_mut(&node.character) {
+                nodes.push(&node);
+            } else {
+                char_map.insert(node.character, vec![&node]);
+            }
+        }
+        // sort the nodes by id for binary search (cache locality with Vec)
+        for char_map in &mut index {
+            for (_, nodes) in char_map {
+                nodes.sort_by(|first, second| first.sort_id().cmp(&second.sort_id()));
+            }
+        }
+        Self { index }
+    }
+}
+
+/// Structure that allows for autocompletion based on a string dataset
+struct Autocompleter<'stored, UUU> {
+    trie: Trie<'stored, UUU>,
+    inverted_index: InvertedIndex<'stored, UUU>,
+}
+
+impl<'stored> Autocompleter<'stored, UUU> {
+    /// Constructs an Autocompleter given the string dataset `source` (does not copy strings)
+    fn new(source: &[&'stored str]) -> Self {
+        let trie = Trie::<'stored, UUU>::new(source);
+        let inverted_index = InvertedIndex::<'stored, UUU>::new(&trie);
+        Self {
+            trie,
+            inverted_index,
+        }
+    }
     /// Returns the top `requested` number of strings with the best prefix distance from the query,
     /// or all strings sorted by prefix edit distance if `requested` is larger than the number stored
-    pub fn autocomplete(&self, query: &str, requested: usize) -> Vec<(String, MatchingNode<UUU>)> {
+    pub fn autocomplete(&self, query: &str, requested: usize) -> Vec<MeasuredPrefix> {
         if requested == 0 {
             return Default::default();
         }
-
-        // Implementing the DFA algorithm
-        // need to iterate through the characters of the query
-        let query: Vec<char> = query.chars().collect();
-
-        let mut result = HashMap::<&'stored str, MatchingNode<UUU>>::new();
-        let mut priority_queue = PriorityQueue::<&Node<UUU>, Reverse<MatchingNode<UUU>>>::new();
-        let matching_node = MatchingNode::<UUU> {
-            node_id: 0, // the root is at index 0
-            //query_match_index: 0,
-            //prefix_edit_distance: 0,
-            checked_len: 0,
-            edit_distance: 0,
-        };
-        priority_queue.push(self.root(), Reverse(matching_node));
-
-        while result.len() < requested {
-            if let Some((node, Reverse(mut matching_node))) = priority_queue.pop() {
-                println!("Popped {:#?} {:#?}", node, matching_node);
-                if (matching_node.checked_len as usize) < query.len() {
-                    self.check_descendants(query.as_slice(), &matching_node, &mut priority_queue);
-                    matching_node.checked_len += 1;
-                    matching_node.edit_distance += 1;
-                    priority_queue.push(node, Reverse(matching_node));
-                    println!("Pushed {:#?} {:#?} from advance", node, matching_node);
-                } else {
-                    self.get_matching_node_strings(&matching_node, &mut result, requested);
-                }
-            } else {
-                // stop when the priority queue is empty, which is when there aren't enough strings stored according to the paper
-                debug_assert!(self.strings.len() < requested);
-                break;
-            }
-        }
-
-        // transform the result to a vector
-        let mut result: Vec<_> = result
-            .into_iter()
-            .map(|(string, matching_node)| (string.to_string(), matching_node))
-            .collect();
-
-        result.sort();
-        result
-    }
-
-    /// Implements the CHECK-DESCENDANTS algorithm from DFA
-    fn check_descendants(
-        &'stored self,
-        query: &[char],
-        matching_node: &MatchingNode<UUU>,
-        priority_queue: &mut PriorityQueue<&'stored Node<UUU>, Reverse<MatchingNode<UUU>>>,
-    ) {
-        let node = &self.nodes[matching_node.node_id];
-
-        const ERROR: usize = 0;
-
-        // there may be an edge case for a long query whose length is close to UUU::MAX
-        // where UUU can overflow and cause incorrect results without being cast to usize
-        // depth_threshold seems to be designed to look at the next nodes that can match from the
-        // edited prefix
-        let depth_threshold =
-            node.depth as usize + matching_node.edit_distance as usize + 1 + ERROR;
-
-        let mut descendant_index = node.descendant_range.start;
-        while descendant_index != node.descendant_range.end {
-            let descendant = &self.nodes[descendant_index];
-            if descendant.depth as usize > depth_threshold {
-                println!("depth {} depth_threshold {}", descendant.depth, depth_threshold);
-                debug_assert!(descendant_index < descendant.descendant_range.end);
-                // all descendants of `descendant` have a larger depth, so skip them
-                descendant_index = descendant.descendant_range.end;
-                continue;
-            }
-            if descendant.character == query[matching_node.checked_len] {
-                let in_between = descendant.depth - node.depth - 1;
-                //let new_prefix_edit_distance = matching_node.prefix_edit_distance + in_between;
-
-                // this is the edit distance for erasing all characters between the ancestor and descendant
-                // which should produce the current query prefix
-                let new_edit_distance = matching_node.edit_distance + in_between;
-
-                let next_index = matching_node.checked_len + 1;
-
-                let new_matching_node = MatchingNode::<UUU> {
-                    node_id: descendant_index,
-                    //query_match_index: next_index,
-                    //prefix_edit_distance: new_prefix_edit_distance,
-                    checked_len: next_index,
-                    edit_distance: new_edit_distance,
-                };
-                // lines 10-15 from DFA
-                if let Some((_, Reverse(prior_matching_node))) = priority_queue.remove(descendant) {
-                    // this seems to be a way of computing the minimum edit distance between the prefixes
-                    if new_edit_distance < prior_matching_node.edit_distance {
-                        priority_queue.push(descendant, Reverse(new_matching_node));
-                        println!(
-                            "Changed priority of {:#?} from {:#?} to {:#?}",
-                            descendant, prior_matching_node, new_matching_node
-                        );
-                    } else {
-                        priority_queue.push(descendant, Reverse(prior_matching_node));
-                    }
-                } else {
-                    // lines 7-9
-                    priority_queue.push(descendant, Reverse(new_matching_node));
-                    println!(
-                        "Pushed {:#?} {:#?} from check_descendants",
-                        descendant, new_matching_node
-                    );
-                }
-            }
-            descendant_index += 1;
-        }
-    }
-
-    /// Adds all strings prefixed by the node given by `matching_node` to `result`,
-    /// or stops when `result` has reached the `requested` size
-    ///
-    /// Implements Get-MN-STRINGS from DFA
-    fn get_matching_node_strings(
-        &self,
-        matching_node: &MatchingNode<UUU>,
-        result: &mut HashMap<&'stored str, MatchingNode<UUU>>,
-        requested: usize,
-    ) {
-        let node = &self.nodes[matching_node.node_id];
-        for string_index in node.string_range.clone() {
-            let string = self.strings[string_index];
-            result.insert(string, matching_node.clone());
-            if result.len() == requested {
-                break;
-            }
-        }
+        "foo"
     }
 }
