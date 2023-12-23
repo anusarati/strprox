@@ -1,0 +1,23 @@
+[package]
+name = "strprox"
+version = "0.1.0"
+edition = "2021"
+description = "Top-k string autocompletion"
+repository = "https://github.com/anusarati/strprox/tree/master/rust/"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+keywords = ["autocomplete"]
+
+[dependencies]
+#bitvec = "1"
+#priority-queue = "1"
+#num = "0.4"
+#serde = { version = "1", optional = true }
+
+[dev-dependencies]
+rand = "0.8"
+
+[features]
+
+[profile.test]
+opt-level = 3
