@@ -3,15 +3,6 @@ mod utils;
 use gloo_utils::format::JsValueSerdeExt;
 use wasm_bindgen::prelude::*;
 
-// Typescript binding for MeasuredPrefix
-// currently cannot include_str!("measured_prefix.ts")
-// https://github.com/rustwasm/wasm-bindgen/issues/2828
-#[wasm_bindgen(typescript_custom_section)]
-const MEASURED_PREFIX_TS: &'static str = r#"export type MeasuredPrefix = {
-    string: string;
-    prefix_distance: number;
-};"#;
-
 #[wasm_bindgen]
 pub struct Autocompleter {
     base: strprox::Autocompleter<'static, u8, u32>,
@@ -47,14 +38,8 @@ impl Autocompleter {
         let base = strprox::Autocompleter::<'static, u8, u32>::new(slice);
         Self { base }
     }
-    /// Returns the best `requested` number of strings for autocompleting `query`
-    /// as a Javascript array of MeasuredPrefix
-    pub fn autocomplete(&self, query: &str, requested: usize) -> js_sys::Array {
-        let result = self.base.autocomplete(query, requested);
-        let js_result = js_sys::Array::new();
-        for measure in result {
-            js_result.push(&JsValue::from_serde(&measure).unwrap());
-        }
-        js_result
+    /// Returns the best `requested` number of strings with their prefix edit distances for autocompleting `query`
+    pub fn autocomplete(&self, query: &str, requested: usize) -> Vec<MeasuredPrefix> {
+        self.base.autocomplete(query, requested)
     }
 }

@@ -18,6 +18,7 @@ use hs_tree::Rankings;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub struct MeasuredString {
+    #[cfg_attr(feature = "wasm", wasm_bindgen(getter_with_clone))]
     pub string: String,
     pub distance: usize,
 }
@@ -33,6 +34,7 @@ impl Ord for MeasuredString {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub struct MeasuredPrefix {
+    #[cfg_attr(feature = "wasm", wasm_bindgen(getter_with_clone))]
     pub string: String,
     pub prefix_distance: usize,
 }
