@@ -18,9 +18,9 @@ pub struct MeasuredString {
     pub distance: usize,
 }
 impl Ord for MeasuredString {
-    /// Compare the edit distances for MeasuredString
+    /// Compare the edit distances and then the strings for MeasuredString
     fn cmp(&self, other: &Self) -> Ordering {
-        self.distance.cmp(&other.distance)
+        self.distance.cmp(&other.distance).then_with(|| self.string.cmp(&other.string))
     }
 }
 
@@ -32,9 +32,9 @@ pub struct MeasuredPrefix {
     pub prefix_distance: usize,
 }
 impl Ord for MeasuredPrefix {
-    /// Compare the prefix and then full edit distances for MeasuredPrefix
+    /// Compare the prefix and then the strings for MeasuredPrefix
     fn cmp(&self, other: &Self) -> Ordering {
-        self.prefix_distance.cmp(&other.prefix_distance)
+        self.prefix_distance.cmp(&other.prefix_distance).then_with(|| self.string.cmp(&other.string))
     }
 }
 impl PartialOrd for MeasuredString {

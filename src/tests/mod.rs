@@ -15,7 +15,7 @@ use crate::{
 };
 
 #[test]
-/// Example input from the paper on META
+/// Example input from the paper on META (see the citations)
 fn meta_paper_example() {
     let source = vec!["soho", "solid", "solo", "solve", "soon", "throw"];
     let autocompleter = Autocompleter::<u8>::new(&source);
@@ -23,7 +23,6 @@ fn meta_paper_example() {
     for measure in &result {
         println!("{:#?}", measure);
     }
-    let _ = std::io::stdout().flush();
     assert!(result.iter().any(|measure| { measure.string == "solid" }));
     assert!(result.iter().any(|measure| { measure.string == "solo" }));
     assert!(result.iter().any(|measure| { measure.string == "solve" }));
@@ -162,12 +161,15 @@ fn empty_query_test() {
 #[test]
 /// Tests that prefix edit distances are within the number of edits made to strings from a database
 /// using 1000 random data points
+/// 
+/// Simultaneously tests that the prefix edit distances are correct
 fn large_database_bounded_peds() {
     let source: Vec<&str> = WORDS.lines().collect();
     let autocompleter = Autocompleter::<u8>::new(&source);
     let mut rng = rand::thread_rng();
     let mut total_duration = Duration::new(0, 0);
-    for _i in 0..1e3 as usize {
+    const ITERATIONS: usize = 1e3 as usize;
+    for _i in 0..ITERATIONS {
         let string = random_string(&source[..]);
         let edits_distribution = Uniform::new(0, 5);
         let edits = edits_distribution.sample(&mut rng);
@@ -196,6 +198,6 @@ fn large_database_bounded_peds() {
     }
     println!(
         "Average time per query: {} ms",
-        total_duration.as_millis() as f64 / 1e3
+        total_duration.as_millis() as f64 / ITERATIONS as f64
     );
 }
