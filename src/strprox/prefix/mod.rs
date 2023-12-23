@@ -376,8 +376,9 @@ impl<'stored> Iterator for MatchingSetIter<'_, 'stored, UUU, SSS> {
 }
 
 impl<'stored> Autocompleter<'stored, UUU, SSS> {
-    /// Returns the top `requested` number of strings with the best prefix distance from the query,
-    /// or all strings sorted by prefix edit distance if `requested` is larger than the number stored
+    /// Returns the top `requested` number of strings with the best prefix distance from the query
+    /// sorted by prefix edit distance and then lexicographical order,
+    /// or all strings available if `requested` is larger than the number stored
     ///
     /// Assumes `query`'s length in Unicode characters is bounded by UUU; will truncate to UUU::MAX characters otherwise
     pub fn autocomplete(&'stored self, query: &str, requested: usize) -> Vec<MeasuredPrefix> {

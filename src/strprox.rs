@@ -3,6 +3,9 @@ use std::{cmp::Ordering, fmt::Display};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+// 
+#[cfg(feature = "wasm")]
+use wasm_bindgen::prelude::*;
 
 /*
 mod hs_tree;
@@ -13,6 +16,7 @@ use hs_tree::Rankings;
 /// Structure that associates a string with its Levenshtein distance from the query
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub struct MeasuredString {
     pub string: String,
     pub distance: usize,
@@ -27,6 +31,7 @@ impl Ord for MeasuredString {
 /// Structure that associates a string with its its prefix edit distance from the query
 #[derive(PartialEq, Eq, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub struct MeasuredPrefix {
     pub string: String,
     pub prefix_distance: usize,

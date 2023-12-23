@@ -7,16 +7,18 @@ repository = "https://github.com/anusarati/strprox/"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 keywords = ["autocomplete"]
-exclude = ["npm/"]
+exclude = ["npm/", "src/tests"]
 
 [dependencies]
 serde = { version = "1.0", optional = true, features = ["derive"] }
+wasm-bindgen = { version = "0.2", optional = true }
 
 [dev-dependencies]
 rand = "0.8"
 
 [features]
 serde = ["dep:serde"]
+wasm = ["wasm-bindgen"]
 
 [profile.test]
 opt-level = 3

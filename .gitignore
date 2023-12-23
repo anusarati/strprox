@@ -2,4 +2,4 @@
 target
 Cargo.lock
 src/tests/words.txt
-src/experiment
+src/experiment/
