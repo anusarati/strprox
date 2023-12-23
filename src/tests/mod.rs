@@ -1,9 +1,18 @@
 use std::{
+    cmp::min,
     io::Write,
     time::{Duration, Instant},
 };
 
-use crate::strprox::Autocompleter;
+use rand::{
+    distributions::{Distribution, Uniform},
+    Rng,
+};
+
+use crate::{
+    levenshtein::{prefix_edit_distance, random_edits, random_string},
+    strprox::Autocompleter,
+};
 
 #[test]
 /// Example input from the paper on META
@@ -40,8 +49,12 @@ fn two_categories() {
     }
     let _ = std::io::stdout().flush();
     assert!(result.iter().any(|measure| { measure.string == "success" })); // && measure.prefix_distance == 2 }));
-    assert!(result.iter().any(|measure| { measure.string == "successor" })); // && measure.prefix_distance == 2 }));
-    assert!(result.iter().any(|measure| { measure.string == "successive" })); //&& measure.prefix_distance == 1 }));
+    assert!(result
+        .iter()
+        .any(|measure| { measure.string == "successor" })); // && measure.prefix_distance == 2 }));
+    assert!(result
+        .iter()
+        .any(|measure| { measure.string == "successive" })); //&& measure.prefix_distance == 1 }));
 
     let query = "deck";
     let result = autocompleter.autocomplete("deck", 3);
@@ -49,13 +62,39 @@ fn two_categories() {
     for measure in &result {
         println!("{:#?}", measure);
     }
-    assert!(result.iter().any(|measure| { measure.string == "decrement" }));
+    assert!(result
+        .iter()
+        .any(|measure| { measure.string == "decrement" }));
     assert!(result
         .iter()
         .any(|measure| { measure.string == "decrease" }));
     assert!(result
         .iter()
         .any(|measure| { measure.string == "decreasing" }));
+}
+
+#[test]
+/// The example in the README
+fn example() {
+    let source = vec![
+        "success",
+        "successive",
+        "successor",
+        "decrease",
+        "decreasing",
+        "decrement",
+    ];
+    let autocompleter = Autocompleter::new(&source);
+    let query = "luck";
+    let result = autocompleter.autocomplete(query, 3);
+    for measured_prefix in &result {
+        println!("{}", measured_prefix);
+    }
+    let result_strings: Vec<&str> = result
+        .iter()
+        .map(|measured_prefix| measured_prefix.string.as_str())
+        .collect();
+    assert_eq!(result_strings, vec!["success", "successive", "successor"]);
 }
 
 /// Tests that autocomplete works for a prefix that only requires an insertion at the beginning
@@ -72,6 +111,7 @@ fn insertion_ped() {
     assert_eq!(result[0].string, "oobf");
 }
 
+// Words from https://github.com/dwyl/english-words/blob/master/words.txt
 const WORDS: &str = include_str!("words.txt");
 
 #[test]
@@ -108,4 +148,54 @@ fn large_database_autocomplete() {
     assert!(result
         .iter()
         .any(|measure| { measure.string == "overrank" }));
+}
+
+#[test]
+/// Tests that the result from an empty query still has strings
+fn empty_query_test() {
+    let source: Vec<&str> = WORDS.lines().collect();
+    let autocompleter = Autocompleter::<u8>::new(&source);
+    let result = autocompleter.autocomplete("", 1);
+    assert_ne!(result.len(), 0);
+}
+
+#[test]
+/// Tests that prefix edit distances are within the number of edits made to strings from a database
+/// using 1000 random data points
+fn large_database_bounded_peds() {
+    let source: Vec<&str> = WORDS.lines().collect();
+    let autocompleter = Autocompleter::<u8>::new(&source);
+    let mut rng = rand::thread_rng();
+    let mut total_duration = Duration::new(0, 0);
+    for _i in 0..1e3 as usize {
+        let string = random_string(&source[..]);
+        let edits_distribution = Uniform::new(0, 5);
+        let edits = edits_distribution.sample(&mut rng);
+        let edited_string = random_edits(string, edits);
+
+        dbg!(&edited_string);
+
+        let time = Instant::now();
+        let result = &autocompleter.autocomplete(edited_string.as_str(), 1)[0];
+        total_duration += time.elapsed();
+
+        dbg!(result);
+
+        // Depending on what edits were made, the result may not necessarily be equal to `string` (e.g. 5 edits to a string with a length of 5)
+        // so we do not check that
+
+        assert_eq!(
+            prefix_edit_distance(edited_string.as_str(), result.string.as_str()),
+            result.prefix_distance,
+            "Prefix edit distance incorrect"
+        );
+        assert!(
+            result.prefix_distance <= edits,
+            "Resulting prefix edit distance not bounded by edits made"
+        );
+    }
+    println!(
+        "Average time per query: {} ms",
+        total_duration.as_millis() as f64 / 1e3
+    );
 }

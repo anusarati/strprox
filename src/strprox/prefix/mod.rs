@@ -11,7 +11,12 @@ mod compact_tree;
 
 /// Implements "Matching-Based Method for Error-Tolerant Autocompletion" (META) from https://doi.org/10.14778/2977797.2977808
 
+// Arithmetic using generics/traits is cumbersome in Rust
+// These are here to have inlay type hints in my IDE, which are missing when a macro is added for them
+// They are three repeated letters to easily search and replace later to add macros
+/// Type that bounds the length of a stored string
 type UUU = u8;
+/// Type that bounds the number of stored strings
 type SSS = u32;
 
 /// A trie node with a similar structure from META
@@ -369,6 +374,21 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
     pub fn autocomplete(&'stored self, query: &str, requested: usize) -> Vec<MeasuredPrefix> {
         if requested == 0 {
             return Default::default();
+        }
+
+        // Return the first `requested` strings or as many as possible, and 0 as the PED (because the best prefix is empty)
+        if query.is_empty() {
+            let strings = &self.trie.strings;
+            let string_range = 0..min(requested, strings.len());
+            return string_range
+                .map(|index| {
+                    let string = strings[index].to_string();
+                    MeasuredPrefix {
+                        string,
+                        prefix_distance: 0,
+                    }
+                })
+                .collect();
         }
 
         let mut query: Vec<char> = query.chars().collect();

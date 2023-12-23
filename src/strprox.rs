@@ -1,4 +1,3 @@
-mod gats;
 mod prefix;
 use std::{cmp::Ordering, fmt::Display};
 
@@ -42,6 +41,11 @@ impl PartialOrd for MeasuredString {
 impl PartialOrd for MeasuredPrefix {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
+    }
+}
+impl Display for MeasuredPrefix {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "(string: {}, PED: {})", self.string, self.prefix_distance)
     }
 }
 
