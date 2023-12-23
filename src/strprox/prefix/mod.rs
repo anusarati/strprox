@@ -7,6 +7,10 @@ use std::{
 };
 
 use super::{MeasuredPrefix, MeasuredString};
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 mod compact_tree;
 
 /// Implements "Matching-Based Method for Error-Tolerant Autocompletion" (META) from https://doi.org/10.14778/2977797.2977808

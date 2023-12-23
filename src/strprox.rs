@@ -1,6 +1,9 @@
 mod prefix;
 use std::{cmp::Ordering, fmt::Display};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /*
 mod hs_tree;
 use hs_tree::HSTree;
@@ -31,8 +34,7 @@ pub struct MeasuredPrefix {
 impl Ord for MeasuredPrefix {
     /// Compare the prefix and then full edit distances for MeasuredPrefix
     fn cmp(&self, other: &Self) -> Ordering {
-        self.prefix_distance
-            .cmp(&other.prefix_distance)
+        self.prefix_distance.cmp(&other.prefix_distance)
     }
 }
 impl PartialOrd for MeasuredString {
@@ -47,7 +49,11 @@ impl PartialOrd for MeasuredPrefix {
 }
 impl Display for MeasuredPrefix {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(string: {}, PED: {})", self.string, self.prefix_distance)
+        write!(
+            f,
+            "(string: {}, PED: {})",
+            self.string, self.prefix_distance
+        )
     }
 }
 

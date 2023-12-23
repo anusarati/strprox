@@ -32,6 +32,11 @@ fn main() {
     // Retrieve the 3 best strings for autocompletion
     let result = autocompleter.autocomplete(query, 3);
 
+    // The prefix edit distance is the best edit distance between a full string and
+    // all the prefixes of another (refer to the paper by Deng et al.).
+    //
+    // Here the PED is between the query and the prefixes of the autocomplete strings.
+
     // (string: success, PED: 2)
     // (string: successive, PED: 2)
     // (string: successor, PED: 2)

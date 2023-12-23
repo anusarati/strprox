@@ -1,7 +1,7 @@
 [package]
 name = "strprox-wasm"
 version = "0.1.0"
-authors = ["Xingzhe Li <xngzhli@gmail.com>"]
+authors = ["Xingzhe Li"]
 edition = "2021"
 
 [lib]
@@ -11,9 +11,10 @@ crate-type = ["cdylib", "rlib"]
 default = ["console_error_panic_hook"]
 
 [dependencies]
-strprox = "0.1.1"
+strprox = { version = "0.1.2", features = ["serde"] }
 wasm-bindgen = "0.2.84"
 js-sys = "0.3"
+gloo-utils = { version = "0.1", features = ["serde"] }
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires

@@ -48,7 +48,7 @@ fn to_char_vec(string: &str) -> Vec<char> {
     string.chars().collect()
 }
 
-/// Returns the prefix edit distance between two char slices
+/// Returns the prefix edit distance between two strings, where the prefixes of `second` vary
 pub fn prefix_edit_distance(first: &str, second: &str) -> usize {
     let first: Vec<char> = to_char_vec(first);
     let second: Vec<char> = to_char_vec(second);
