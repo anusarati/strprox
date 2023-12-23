@@ -1,1 +1,4 @@
 .vscode
+target
+Cargo.lock
+src/tests/words.txt

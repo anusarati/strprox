@@ -9,6 +9,7 @@ This is intended to implement the top-k "matching-based framework for error-tole
 - [Notes](#notes)
 - [Citations](#citations)
 - [License](#license)
+- [Contributions](#contrib)
 
 ## [Example](#example)
 
@@ -52,7 +53,7 @@ fn main() {
 
 `Autocompleter` is currently a generic struct that limits the length of referenced strings to `u8::MAX` and maximum number of referenced strings to `u32::MAX` by default for space efficiency. A macro can be added later to instantiate it for other unsigned types.
 
-Some of the tests require the file named [`words.txt`](https://github.com/dwyl/english-words/blob/master/words.txt) file linked here in `src/tests`.
+Some of the tests require the file named [`words.txt`](https://github.com/dwyl/english-words/blob/master/words.txt) file (highlighted link) in `src/tests`.
 
 ## [Citations](#citations)
 ```bibtex
@@ -76,3 +77,6 @@ numpages = {12}
 
 ## [License](#license)
 Dual-licensed under [MIT](LICENSE-MIT) and [Apache-2.0](LICENSE-APACHE). You may choose either license.
+
+### [Contributions](#contrib)
+Contributions to this project are likewise understood to be dual-licensed under MIT and Apache-2.0.
