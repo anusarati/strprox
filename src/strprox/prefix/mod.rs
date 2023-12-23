@@ -21,6 +21,7 @@ type SSS = u32;
 
 /// A trie node with a similar structure from META
 #[derive(PartialEq, Eq, Hash, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 struct Node<UUU, SSS> {
     /// One Unicode character
     character: char,
@@ -49,6 +50,7 @@ type TrieStrings<'stored> = Vec<&'stored str>;
 type TrieNodes<UUU, SSS> = Vec<Node<UUU, SSS>>;
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Trie<'stored, UUU, SSS> {
     nodes: TrieNodes<UUU, SSS>,
     /// Stored strings
@@ -220,6 +222,7 @@ impl<'stored> Trie<'stored, UUU, SSS> {
 }
 
 /// Inverted index from META
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 struct InvertedIndex<UUU, SSS> {
     /// depth |-> (character |-> nodes ids in trie)
     index: Vec<HashMap<char, Vec<SSS>>>,
@@ -270,6 +273,7 @@ impl InvertedIndex<UUU, SSS> {
 }
 
 /// Structure that allows for autocompletion based on a string dataset
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Autocompleter<'stored, UUU, SSS> {
     trie: Trie<'stored, UUU, SSS>,
     inverted_index: InvertedIndex<UUU, SSS>,
@@ -298,7 +302,6 @@ impl<'stored> Matching<'stored, UUU, SSS> {
     /// Returns an upper bound on the edit distance between the query and a prefix of length `stored_len` that intersects
     /// with the matching node's prefix
     fn deduced_edit_distance(&self, query_len: usize, stored_len: usize) -> usize {
-        //dbg!(query_len, self.query_prefix_len);
         self.edit_distance as usize
             + max(
                 query_len.saturating_sub(self.query_prefix_len as usize),
@@ -410,7 +413,6 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
                 requested,
                 &mut result,
             );
-            //dbg!(&result);
         }
 
         let mut result: Vec<MeasuredPrefix> = result
@@ -463,16 +465,15 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
         requested: usize,
         result: &mut BTreeMap<&'stored str, UUU>,
     ) -> usize {
+        // this may need to become public along with MatchingSet to support result caching for previous query prefixes
         let character = query[query_len - 1];
 
-        //dbg!(&active_matching_set);
         *active_matching_set = self.first_deducing(
             active_matching_set,
             character,
             query_len,
             threshold.saturating_sub(1),
         );
-        //dbg!(&active_matching_set);
 
         for matching in active_matching_set.iter() {
             let prefix_edit_distance = matching.deduced_prefix_edit_distance(query_len);
@@ -491,7 +492,6 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
             threshold,
             requested,
         ) {
-            //dbg!(&active_matching_set);
             threshold
         } else {
             let full = self.second_deducing(
@@ -502,7 +502,6 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
                 threshold + 1,
                 requested,
             );
-            //dbg!(active_matching_set);
             debug_assert!(full);
             threshold + 1
         }
@@ -611,30 +610,13 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
                                 matching: Matching<'stored, UUU, SSS>,
                                 appendix: &mut Appendix<'stored>| {
             let max_ped = matching.deduced_prefix_edit_distance(query_len) as UUU;
-            // lines 2-4
+            // lines 2-4 of SecondDeducing
             if max_ped == threshold as UUU {
                 if self.fill_results(matching.node, max_ped as usize, result, requested) {
                     return true;
                 }
-                /*
-                for string_index in matching.node.string_range {
-                    let string = self.trie.strings[string_index as usize];
-
-                    // store the best prefix edit distance for a string
-                    // this is assuming some nodes in the active matching set are ancestors of others in it
-                    // this should not be necessary because the active matches should have the best PEDs so far
-                    // based on the incremental updates of the threshold
-                    if let Some(prefix_edit_distance) = result.get_mut(string) {
-                        *prefix_edit_distance = min(*prefix_edit_distance, max_ped);
-                    } else {
-                        result.insert(string, max_ped);
-                        if result.len() == requested {
-                            return true;
-                        }
-                    }
-                }
-                */
             }
+
             let last_depth = min(
                 matching.node.depth as usize + threshold - matching.edit_distance as usize + 1,
                 self.inverted_index.max_depth(),

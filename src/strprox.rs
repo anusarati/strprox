@@ -9,6 +9,7 @@ use hs_tree::Rankings;
 
 /// Structure that associates a string with its Levenshtein distance from the query
 #[derive(PartialEq, Eq, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct MeasuredString {
     pub string: String,
     pub distance: usize,
@@ -22,6 +23,7 @@ impl Ord for MeasuredString {
 
 /// Structure that associates a string with its its prefix edit distance from the query
 #[derive(PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct MeasuredPrefix {
     pub string: String,
     pub prefix_distance: usize,
@@ -49,5 +51,6 @@ impl Display for MeasuredPrefix {
     }
 }
 
+#[doc(inline)]
 pub type Autocompleter<'stored, U = u8, S = u32> = prefix::Autocompleter<'stored, U, S>;
 //pub type StringSearcher<'a, U> = HSTree<'a, U>;

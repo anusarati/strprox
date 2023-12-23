@@ -1,4 +1,6 @@
 pub mod strprox;
+
+#[doc(inline)]
 pub use strprox::*;
 
 #[cfg(test)]
