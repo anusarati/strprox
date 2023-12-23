@@ -2,7 +2,7 @@
 name = "strprox-wasm"
 version = "0.1.0"
 authors = ["Xingzhe Li <xngzhli@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -11,6 +11,7 @@ crate-type = ["cdylib", "rlib"]
 default = ["console_error_panic_hook"]
 
 [dependencies]
+strprox = "0.1"
 wasm-bindgen = "0.2.84"
 
 # The `console_error_panic_hook` crate provides better debugging of panics by

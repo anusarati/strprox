@@ -1,6 +1,7 @@
 mod utils;
 
 use wasm_bindgen::prelude::*;
+use strprox::strprox::Autocompleter;
 
 #[wasm_bindgen]
 extern "C" {
