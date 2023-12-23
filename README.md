@@ -53,7 +53,7 @@ fn main() {
 
 `Autocompleter` is currently a generic struct that limits the length of referenced strings to `u8::MAX` and maximum number of referenced strings to `u32::MAX` by default for space efficiency. A macro can be added later to instantiate it for other unsigned types.
 
-Some of the tests require the file named [`words.txt`](https://github.com/dwyl/english-words/blob/master/words.txt) file (highlighted link) in `src/tests`.
+Some of the tests require a file named [`words.txt`](https://github.com/dwyl/english-words/blob/master/words.txt) file (highlighted link) in `src/tests`.
 
 ## [Citations](#citations)
 ```bibtex
