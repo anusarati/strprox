@@ -46,7 +46,7 @@ impl Autocompleter {
         let result = self.base.autocomplete(query, requested);
         let js_result = js_sys::Array::new_with_length(result.len() as u32);
         for measure in result {
-            js_result.push(JsValue::from_serde(measure));
+            js_result.push(JsValue::from_serde(&measure));
         }
         js_result
     }

@@ -57,6 +57,7 @@ type TrieNodes<UUU, SSS> = Vec<Node<UUU, SSS>>;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Trie<'stored, UUU, SSS> {
     nodes: TrieNodes<UUU, SSS>,
+    #[cfg_attr(feature = "serde", serde(borrow))]
     /// Stored strings
     strings: TrieStrings<'stored>,
 }
@@ -279,6 +280,7 @@ impl InvertedIndex<UUU, SSS> {
 /// Structure that allows for autocompletion based on a string dataset
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Autocompleter<'stored, UUU, SSS> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     trie: Trie<'stored, UUU, SSS>,
     inverted_index: InvertedIndex<UUU, SSS>,
 }
