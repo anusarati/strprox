@@ -3,7 +3,7 @@ use std::{cmp::Ordering, fmt::Display};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-// 
+//
 #[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
 
@@ -16,32 +16,34 @@ use hs_tree::Rankings;
 /// Structure that associates a string with its Levenshtein distance from the query
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "wasm", wasm_bindgen)]
+#[cfg_attr(feature = "wasm", wasm_bindgen(getter_with_clone))]
 pub struct MeasuredString {
-    #[cfg_attr(feature = "wasm", wasm_bindgen(getter_with_clone))]
     pub string: String,
     pub distance: usize,
 }
 impl Ord for MeasuredString {
     /// Compare the edit distances and then the strings for MeasuredString
     fn cmp(&self, other: &Self) -> Ordering {
-        self.distance.cmp(&other.distance).then_with(|| self.string.cmp(&other.string))
+        self.distance
+            .cmp(&other.distance)
+            .then_with(|| self.string.cmp(&other.string))
     }
 }
 
 /// Structure that associates a string with its its prefix edit distance from the query
 #[derive(PartialEq, Eq, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "wasm", wasm_bindgen)]
+#[cfg_attr(feature = "wasm", wasm_bindgen(getter_with_clone))]
 pub struct MeasuredPrefix {
-    #[cfg_attr(feature = "wasm", wasm_bindgen(getter_with_clone))]
     pub string: String,
     pub prefix_distance: usize,
 }
 impl Ord for MeasuredPrefix {
     /// Compare the prefix and then the strings for MeasuredPrefix
     fn cmp(&self, other: &Self) -> Ordering {
-        self.prefix_distance.cmp(&other.prefix_distance).then_with(|| self.string.cmp(&other.string))
+        self.prefix_distance
+            .cmp(&other.prefix_distance)
+            .then_with(|| self.string.cmp(&other.string))
     }
 }
 impl PartialOrd for MeasuredString {
