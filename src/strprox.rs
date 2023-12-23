@@ -45,5 +45,5 @@ impl PartialOrd for MeasuredPrefix {
     }
 }
 
-pub type Autocompleter<'stored, U> = prefix::Trie<'stored, U>;
+pub type Autocompleter<'stored, U = u8, S = u32> = prefix::Autocompleter<'stored, U, S>;
 //pub type StringSearcher<'a, U> = HSTree<'a, U>;

@@ -3,6 +3,8 @@
 /// Uses the CPMerge algorithm from "Simple and Efficient Algorithm for Approximate Dictionary Matching" by Okazaki and Tsujii
 ///
 /// Uses the Length-aware edit distance verification algorithm from doi:10.14778/2078331.2078340 referenced in the HSTree paper
+/// 
+/// Incomplete, unused
 use bitvec::prelude::*;
 use ndarray::{Array1, Array2};
 use std::cmp::Ordering;

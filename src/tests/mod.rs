@@ -6,60 +6,59 @@ use std::{
 use crate::strprox::Autocompleter;
 
 #[test]
-/// Example input from the DFA paper
-fn dfa_paper_example() {
-    let source = vec![
-        "geem", "genea", "genep", "genez", "genome", "genet", "gele", "ner",
-    ];
+/// Example input from the paper on META
+fn meta_paper_example() {
+    let source = vec!["soho", "solid", "solo", "solve", "soon", "throw"];
     let autocompleter = Autocompleter::<u8>::new(&source);
-    let result = autocompleter.autocomplete("gne", 3);
+    let result = autocompleter.autocomplete("ssol", 3);
     for measure in &result {
         println!("{:#?}", measure);
     }
     let _ = std::io::stdout().flush();
-    assert!(result.iter().any(|measure| { measure.0 == "geem" }));
-    assert!(result.iter().any(|measure| { measure.0 == "genea" }));
-    // the paper has "genep" instead of "gele"
-    // I believe this may be because this implementation sorts the 0s
-    // all the 0s do in fact have the same prefix edit distance from "gne" (1)
-    assert!(result.iter().any(|measure| { measure.0 == "gele" }));
+    assert!(result.iter().any(|measure| { measure.string == "solid" }));
+    assert!(result.iter().any(|measure| { measure.string == "solo" }));
+    assert!(result.iter().any(|measure| { measure.string == "solve" }));
 }
 
 #[test]
-/// Toy test where the prefix edit distances are different
+/// Tests that autocomplete can return exact associated categories
 fn two_categories() {
     let source = vec![
-        "banana",
-        "labana",
-        "alabama",
-        "orange",
-        "blorange",
-        "orangutan",
-        "range",
+        "success",
+        "successor",
+        "successive",
+        "decrement",
+        "decrease",
+        "decreasing",
     ];
     let autocompleter = Autocompleter::<u8>::new(&source);
-    let result = autocompleter.autocomplete("ababa", 3);
-    println!("ababa\n");
+    let query = "zucc";
+    let result = autocompleter.autocomplete(query, 3);
+    println!("{}\n", query);
     for measure in &result {
         println!("{:#?}", measure);
     }
     let _ = std::io::stdout().flush();
-    assert!(result.iter().any(|measure| { measure.0 == "banana" })); // && measure.prefix_distance == 2 }));
-    assert!(result.iter().any(|measure| { measure.0 == "labana" })); // && measure.prefix_distance == 2 }));
-    assert!(result.iter().any(|measure| { measure.0 == "alabama" })); //&& measure.prefix_distance == 1 }));
+    assert!(result.iter().any(|measure| { measure.string == "success" })); // && measure.prefix_distance == 2 }));
+    assert!(result.iter().any(|measure| { measure.string == "successor" })); // && measure.prefix_distance == 2 }));
+    assert!(result.iter().any(|measure| { measure.string == "successive" })); //&& measure.prefix_distance == 1 }));
 
-    let result = autocompleter.autocomplete("oange", 4);
-    println!("oange\n");
+    let query = "deck";
+    let result = autocompleter.autocomplete("deck", 3);
+    println!("{}\n", query);
     for measure in &result {
         println!("{:#?}", measure);
     }
-    assert!(result.iter().any(|measure| { measure.0 == "orange" }));
-    assert!(result.iter().any(|measure| { measure.0 == "blorange" }));
-    assert!(result.iter().any(|measure| { measure.0 == "orangutan" }));
-    assert!(result.iter().any(|measure| { measure.0 == "range" }));
+    assert!(result.iter().any(|measure| { measure.string == "decrement" }));
+    assert!(result
+        .iter()
+        .any(|measure| { measure.string == "decrease" }));
+    assert!(result
+        .iter()
+        .any(|measure| { measure.string == "decreasing" }));
 }
 
-/// Test that autocomplete works for a prefix that only requires an insertion at the beginning
+/// Tests that autocomplete works for a prefix that only requires an insertion at the beginning
 #[test]
 fn insertion_ped() {
     let query = "foob";
@@ -70,7 +69,7 @@ fn insertion_ped() {
     for measure in &result {
         println!("{:#?}", measure);
     }
-    assert_eq!(result[0].0, "oobf");
+    assert_eq!(result[0].string, "oobf");
 }
 
 const WORDS: &str = include_str!("words.txt");
@@ -81,7 +80,7 @@ fn large_database_misspelling() {
     let source: Vec<&str> = WORDS.lines().collect();
     let time = Instant::now();
     let autocompleter = Autocompleter::<u8>::new(&source);
-    println!("Construction of trie took: {:#?}", time.elapsed());
+    println!("Indexing took: {:#?}", time.elapsed());
     let requested = 10;
     let result = autocompleter.autocomplete("abandonned", requested);
     assert_eq!(result.len(), requested);
@@ -89,7 +88,9 @@ fn large_database_misspelling() {
     for measure in &result {
         println!("{:#?}", measure);
     }
-    assert!(result.iter().any(|measure| { measure.0 == "abandoned" }));
+    assert!(result
+        .iter()
+        .any(|measure| { measure.string == "abandoned" }));
 }
 
 #[test]
@@ -104,5 +105,7 @@ fn large_database_autocomplete() {
     for measure in &result {
         println!("{:#?}", measure);
     }
-    assert!(result.iter().any(|measure| { measure.0 == "aberration" }));
+    assert!(result
+        .iter()
+        .any(|measure| { measure.string == "overrank" }));
 }
