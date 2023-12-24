@@ -3,8 +3,8 @@ import { wasm } from '@rollup/plugin-wasm';
 export default [{
   input: 'index.js',
   output: {
-    file: 'publish/dist/strprox.js',
-    format: 'umd',
+    file: 'publish/dist/strprox.mjs',
+    format: 'es',
     name: 'strprox'
   },
   plugins: [

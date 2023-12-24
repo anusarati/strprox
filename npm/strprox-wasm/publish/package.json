@@ -4,7 +4,7 @@
     "Xingzhe Li"
   ],
   "description": "Top-k string autocompletion",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "license": "MIT OR Apache-2.0",
   "repository": {
     "type": "git",
