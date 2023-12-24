@@ -1,0 +1,26 @@
+{
+  "name": "strprox",
+  "collaborators": [
+    "Xingzhe Li"
+  ],
+  "description": "Top-k string autocompletion",
+  "version": "0.1.1",
+  "license": "MIT OR Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anusarati/strprox/"
+  },
+  "files": [
+    "strprox_bg.wasm",
+    "strprox.js",
+    "strprox.d.ts",
+    "LICENSE-APACHE",
+    "LICENSE-MIT",
+    "dist/strprox.js"
+  ],
+  "module": "dist/strprox.js",
+  "types": "strprox.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

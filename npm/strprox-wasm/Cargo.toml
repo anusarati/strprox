@@ -1,11 +1,13 @@
 [package]
-name = "strprox-wasm"
+# reusing the crate name to make the build easier
+name = "strprox"
 version = "0.1.0"
 authors = ["Xingzhe Li"]
 description = "Top-k string autocompletion"
 repository = "https://github.com/anusarati/strprox/"
 license = "MIT OR Apache-2.0"
 edition = "2021"
+publish = false
 
 [lib]
 crate-type = ["cdylib", "rlib"]

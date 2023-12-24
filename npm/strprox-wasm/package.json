@@ -1,0 +1,25 @@
+{
+  "name": "strprox-wasm",
+  "version": "0.1.0",
+  "description": "Port strprox to wasm",
+  "private": true,
+  "type": "module",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "wasm-pack build -t web && rollup -c && rm pkg/package* && cp pkg/* publish",
+    "foo": "echo *.{js}",
+    "clean": "rm -r pkg",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@rollup/plugin-wasm": "^6.2.2",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
+  }
+}
