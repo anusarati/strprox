@@ -4,25 +4,26 @@
     "Xingzhe Li"
   ],
   "description": "Top-k string autocompletion",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "license": "MIT OR Apache-2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/anusarati/strprox.git"
   },
   "files": [
-    "strprox_bg.wasm",
-    "strprox.js",
     "strprox.d.ts",
+    "strprox_bg.d.ts",
     "LICENSE-APACHE",
     "LICENSE-MIT",
-    "dist/strprox.mjs"
+    "dist/es/*",
+    "dist/umd/*"
   ],
   "type": "module",
-  "main": "./dist/strprox.mjs",
-  "module": "./dist/strprox.mjs",
+  "main": "./dist/umd/strprox.cjs",
+  "module": "./dist/es/strprox.mjs",
   "exports": {
-    "import": "./dist/strprox.mjs",
+    "import": "./dist/es/strprox.mjs",
+    "require": "./dist/umd/strprox.cjs",
     "types": "./strprox.d.ts"
   },
   "types": "strprox.d.ts",

@@ -4,7 +4,6 @@ Autocompletion library [ported from Rust](https://github.com/anusarati/strprox) 
 
 ## Example
 
-Typescript
 ```typescript
 import { Autocompleter, MeasuredPrefix } from "strprox";
 
