@@ -79,6 +79,7 @@ pages = {828–839},
 numpages = {12}
 }
 ```
+This paper is also available from the conference website [here](http://www.vldb.org/pvldb/vol9/p828-deng.pdf).
 
 ## [License](#license)
 Dual-licensed under [MIT](LICENSE-MIT) and [Apache-2.0](LICENSE-APACHE). You may choose either license.
