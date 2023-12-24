@@ -20,7 +20,11 @@
   ],
   "type": "module",
   "main": "./dist/strprox.mjs",
-  "exports": "./dist/strprox.mjs",
+  "module": "./dist/strprox.mjs",
+  "exports": {
+    "import": "./dist/strprox.mjs",
+    "types": "./strprox.d.ts"
+  },
   "types": "strprox.d.ts",
   "sideEffects": [
     "./snippets/*"
