@@ -10,13 +10,11 @@
   "scripts": {
     "build:move" : "rm pkg/package* && cp pkg/* publish",
     "build:move_wasm": "cp publish/strprox_bg.wasm publish/dist/umd/strprox_bg.wasm",
-    "build:umd": "npm run wasm-pack nodejs && rollup -c umd.rollup.config.js && npm run build:move && npm run build:move_wasm",
-    "build:es": "npm run wasm-pack web && rollup -c es.rollup.config.js && npm run build:move",
+    "build:umd": "./wasm-pack-target nodejs && rollup -c umd.rollup.config.js && npm run build:move && npm run build:move_wasm",
+    "build:es": "./wasm-pack-target es && rollup -c es.rollup.config.js && npm run build:move",
     "build": "npm run build:umd && npm run build:es",
-    "foo": "echo *.{js}",
     "clean": "rm -r pkg",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "wasm-pack": "wasm-pack build -d npm/strprox-wasm/pkg -t $1"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "MIT",

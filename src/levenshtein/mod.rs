@@ -94,6 +94,7 @@ pub fn unindexed_autocomplete(query: &str, requested: usize, strings: &[&str]) -
         prefix_distance: prefix_edit_distance(query, &string),
     }).collect();
     measures.sort();
+    measures.dedup();
     measures.truncate(requested);
     measures
 }

@@ -50,11 +50,6 @@ impl From<strprox::Autocompleter<'static, u8, u32>> for Autocompleter {
     }
 }
 
-/// Autocompleter's internal data is immutable via its public interface
-///
-/// Can be used for static OnceCell<Autocompleter> with Wizer to have pre-initialized Autocompleter
-unsafe impl Sync for Autocompleter {}
-
 #[wasm_bindgen]
 /// Returns the `requested` number of strings with the best prefix edit distance from the `query`
 /// without using an index
