@@ -1,5 +1,7 @@
 use std::cmp::min;
+use crate::MeasuredPrefix;
 
+#[cfg(test)]
 use rand::{
     distributions::{
         uniform::{UniformChar, UniformSampler},
@@ -10,7 +12,7 @@ use rand::{
 
 /// Returns the last row of the Levenshtein edit distance matrix between two strings as char-slices,
 /// where the row is for the edit distances between varying prefixes of `second` with a certain prefix of `first`
-pub fn final_lev_row(first: &[char], second: &[char]) -> Vec<usize> {
+pub(super) fn final_lev_row(first: &[char], second: &[char]) -> Vec<usize> {
     // using a two-row memoization https://en.wikipedia.org/wiki/Levenshtein_distance#Iterative_with_two_matrix_rows
     let row_len = second.len() + 1;
     let mut prev_row = Vec::with_capacity(row_len);
@@ -44,11 +46,20 @@ pub fn final_lev_row(first: &[char], second: &[char]) -> Vec<usize> {
 }
 
 /// Returns `string` as a Vec of its characters
-fn to_char_vec(string: &str) -> Vec<char> {
+pub(crate) fn to_char_vec(string: &str) -> Vec<char> {
     string.chars().collect()
 }
 
+pub(crate) fn string_from_chars(chars: Vec<char>) -> String {
+    let mut string = String::with_capacity(chars.len() * 4);
+    for char in chars {
+        string.push(char);
+    }
+    string
+}
+
 /// Returns the prefix edit distance between two strings, where the prefixes of `second` vary
+/// (refer to the paper by Deng et al.)
 pub fn prefix_edit_distance(first: &str, second: &str) -> usize {
     let first: Vec<char> = to_char_vec(first);
     let second: Vec<char> = to_char_vec(second);
@@ -76,10 +87,22 @@ pub fn edit_distance(first: &str, second: &str) -> usize {
     }
 }
 
+/// Baseline autocomplete using the PED that doesn't use an index
+pub fn unindexed_autocomplete(query: &str, requested: usize, strings: &[&str]) -> Vec<MeasuredPrefix> {
+    let mut measures: Vec<MeasuredPrefix> = strings.iter().map(|string| MeasuredPrefix {
+        string: string.to_string(),
+        prefix_distance: prefix_edit_distance(query, &string),
+    }).collect();
+    measures.sort();
+    measures.truncate(requested);
+    measures
+}
+
 /// Returns a string with a number of random `edits` to `string`
 ///
 /// Does not guarantee that the edits are non-overlapping (edit distance may be less than `edits`)
-pub fn random_edits(string: &str, edits: usize) -> String {
+#[cfg(test)]
+pub(crate) fn random_edits(string: &str, edits: usize) -> String {
     let mut string: Vec<char> = string.chars().collect();
 
     let edit_type_distribution = Uniform::new_inclusive(1, 3);
@@ -128,7 +151,8 @@ pub fn random_edits(string: &str, edits: usize) -> String {
 }
 
 /// Returns a random string from `strings`
-pub fn random_string<'a>(strings: &[&'a str]) -> &'a str {
+#[cfg(test)]
+pub(crate) fn random_string<'a>(strings: &[&'a str]) -> &'a str {
     let mut rng = rand::thread_rng();
     strings[rng.gen_range(0..strings.len())]
 }

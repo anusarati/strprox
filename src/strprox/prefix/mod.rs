@@ -7,6 +7,7 @@ use std::{
 };
 
 use super::{MeasuredPrefix, MeasuredString};
+use crate::levenshtein;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -401,20 +402,20 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
                 .collect();
         }
 
-        let mut query: Vec<char> = query.chars().collect();
-        if query.len() > UUU::MAX as usize {
-            query.truncate(UUU::MAX as usize);
+        let mut query_chars: Vec<char> = query.chars().collect();
+        if query_chars.len() > UUU::MAX as usize {
+            query_chars.truncate(UUU::MAX as usize);
         }
 
-        let mut result = BTreeMap::<&'stored str, UUU>::new();
+        let mut result = BTreeSet::<&'stored str>::new();
         let mut threshold = 1;
         let mut active_matching_set = MatchingSet::<'stored, UUU, SSS>::new(&self.trie);
 
-        for query_prefix_len in 1..=query.len() {
+        for query_prefix_len in 1..=query_chars.len() {
             result.clear();
             threshold = self.autocomplete_step(
                 &mut active_matching_set,
-                &query,
+                &query_chars,
                 query_prefix_len,
                 threshold,
                 requested,
@@ -424,9 +425,9 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
 
         let mut result: Vec<MeasuredPrefix> = result
             .into_iter()
-            .map(|(string, prefix_edit_distance)| MeasuredPrefix {
+            .map(|string| MeasuredPrefix {
                 string: string.to_string(),
-                prefix_distance: prefix_edit_distance as usize,
+                prefix_distance: levenshtein::prefix_edit_distance(query, string),
             })
             .collect();
 
@@ -440,7 +441,7 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
         &self,
         node: &Node<UUU, SSS>,
         prefix_edit_distance: usize,
-        result: &mut BTreeMap<&'stored str, UUU>,
+        result: &mut BTreeSet<&'stored str>,
         requested: usize,
     ) -> bool {
         if requested == 0 {
@@ -449,10 +450,7 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
         debug_assert_ne!(result.len(), requested);
 
         for string_index in node.string_range.clone() {
-            result.insert(
-                self.trie.strings[string_index as usize],
-                prefix_edit_distance as UUU,
-            );
+            result.insert(self.trie.strings[string_index as usize]);
             if result.len() >= requested {
                 return true;
             }
@@ -470,7 +468,7 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
         query_len: usize,
         threshold: usize,
         requested: usize,
-        result: &mut BTreeMap<&'stored str, UUU>,
+        result: &mut BTreeSet<&'stored str>,
     ) -> usize {
         // this may need to become public along with MatchingSet to support result caching for previous query prefixes
         let character = query[query_len - 1];
@@ -607,7 +605,7 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
         active_matching_set: &mut MatchingSet<'stored, UUU, SSS>,
         query: &[char],
         query_len: usize,
-        result: &mut BTreeMap<&'stored str, UUU>,
+        result: &mut BTreeSet<&'stored str>,
         threshold: usize,
         requested: usize,
     ) -> bool {

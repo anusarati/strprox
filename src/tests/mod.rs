@@ -10,9 +10,15 @@ use rand::{
 };
 
 use crate::{
-    levenshtein::{prefix_edit_distance, random_edits, random_string},
+    levenshtein::{prefix_edit_distance, random_edits, random_string, unindexed_autocomplete},
     strprox::Autocompleter,
+    MeasuredPrefix,
 };
+
+/// Returns whether any MeasuredPrefix in `measures` has the `expected` string
+fn contains_string(measures: &Vec<MeasuredPrefix>, expected: &str) -> bool {
+    measures.iter().any(|measure| measure.string == expected)
+}
 
 #[test]
 /// Example input from the paper on META (see the citations)
@@ -23,9 +29,9 @@ fn meta_paper_example() {
     for measure in &result {
         println!("{:#?}", measure);
     }
-    assert!(result.iter().any(|measure| { measure.string == "solid" }));
-    assert!(result.iter().any(|measure| { measure.string == "solo" }));
-    assert!(result.iter().any(|measure| { measure.string == "solve" }));
+    assert!(contains_string(&result, "solid"));
+    assert!(contains_string(&result, "solo"));
+    assert!(contains_string(&result, "solve"));
 }
 
 #[test]
@@ -47,13 +53,11 @@ fn two_categories() {
         println!("{:#?}", measure);
     }
     let _ = std::io::stdout().flush();
-    assert!(result.iter().any(|measure| { measure.string == "success" })); // && measure.prefix_distance == 2 }));
-    assert!(result
-        .iter()
-        .any(|measure| { measure.string == "successor" })); // && measure.prefix_distance == 2 }));
-    assert!(result
-        .iter()
-        .any(|measure| { measure.string == "successive" })); //&& measure.prefix_distance == 1 }));
+
+    assert!(contains_string(&result, "success"));
+    assert!(contains_string(&result, "successor"));
+    assert!(contains_string(&result, "successive"));
+    assert_eq!(result, unindexed_autocomplete("zucc", 3, source.as_slice()));
 
     let query = "deck";
     let result = autocompleter.autocomplete("deck", 3);
@@ -61,15 +65,11 @@ fn two_categories() {
     for measure in &result {
         println!("{:#?}", measure);
     }
-    assert!(result
-        .iter()
-        .any(|measure| { measure.string == "decrement" }));
-    assert!(result
-        .iter()
-        .any(|measure| { measure.string == "decrease" }));
-    assert!(result
-        .iter()
-        .any(|measure| { measure.string == "decreasing" }));
+    assert!(contains_string(&result, "decrement"));
+    assert!(contains_string(&result, "decrease"));
+    assert!(contains_string(&result, "decreasing"));
+
+    assert_eq!(result, unindexed_autocomplete("deck", 3, source.as_slice()));
 }
 
 #[test]
@@ -127,9 +127,7 @@ fn large_database_misspelling() {
     for measure in &result {
         println!("{:#?}", measure);
     }
-    assert!(result
-        .iter()
-        .any(|measure| { measure.string == "abandoned" }));
+    assert!(contains_string(&result, "abandoned"));
 }
 
 #[test]
@@ -144,9 +142,7 @@ fn large_database_autocomplete() {
     for measure in &result {
         println!("{:#?}", measure);
     }
-    assert!(result
-        .iter()
-        .any(|measure| { measure.string == "overrank" }));
+    assert!(contains_string(&result, "overrank"));
 }
 
 #[test]
@@ -161,7 +157,7 @@ fn empty_query_test() {
 #[test]
 /// Tests that prefix edit distances are within the number of edits made to strings from a database
 /// using 1000 random data points
-/// 
+///
 /// Simultaneously tests that the prefix edit distances are correct
 fn large_database_bounded_peds() {
     let source: Vec<&str> = WORDS.lines().collect();

@@ -18,14 +18,8 @@
     "dist/es/*",
     "dist/umd/*"
   ],
-  "type": "module",
   "main": "./dist/umd/strprox.cjs",
   "module": "./dist/es/strprox.mjs",
-  "exports": {
-    "import": "./dist/es/strprox.mjs",
-    "require": "./dist/umd/strprox.cjs",
-    "types": "./strprox.d.ts"
-  },
   "types": "strprox.d.ts",
   "sideEffects": [
     "./snippets/*"
