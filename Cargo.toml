@@ -1,6 +1,6 @@
 [package]
 name = "strprox"
-version = "0.1.10"
+version = "0.2.0"
 edition = "2021"
 description = "Top-k string autocompletion"
 repository = "https://github.com/anusarati/strprox/"
@@ -22,7 +22,7 @@ rand = "0.8"
 
 [features]
 serde = ["dep:serde"]
-wasm = ["wasm-bindgen","js-sys"]
+wasm = ["wasm-bindgen", "js-sys"]
 
 [profile.test]
 opt-level = 3
