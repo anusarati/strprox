@@ -1,7 +1,6 @@
-use crate::{strprox, levenshtein};
+use crate::{levenshtein, strprox};
 use strprox::MeasuredPrefix;
 use wasm_bindgen::prelude::*;
-
 
 #[wasm_bindgen]
 pub struct Autocompleter {
@@ -21,7 +20,7 @@ impl Autocompleter {
                 strings.push(string);
             }
         }
-        // conserve memory (to optimize with Node startup snapshot)
+        // conserve memory (to optimize with startup snapshot like from Wizer)
         // this is operation is unfortunately duplicated in the construction of strprox::Autocompleter,
         // which does not assume the source is sorted and deduped, but using a snapshot should mitigate
         // this drawback
@@ -41,6 +40,12 @@ impl Autocompleter {
     /// Returns the best `requested` number of strings with their prefix edit distances for autocompleting `query`
     pub fn autocomplete(&self, query: &str, requested: usize) -> Vec<MeasuredPrefix> {
         self.base.autocomplete(query, requested)
+    }
+}
+
+impl From<strprox::Autocompleter<'static, u8, u32>> for Autocompleter {
+    fn from(base: strprox::Autocompleter<'static, u8, u32>) -> Self {
+        Self { base }
     }
 }
 
