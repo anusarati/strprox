@@ -1,8 +1,7 @@
-mod utils;
-
-use gloo_utils::format::JsValueSerdeExt;
+use crate::{strprox, levenshtein};
 use strprox::MeasuredPrefix;
 use wasm_bindgen::prelude::*;
+
 
 #[wasm_bindgen]
 pub struct Autocompleter {
@@ -43,4 +42,25 @@ impl Autocompleter {
     pub fn autocomplete(&self, query: &str, requested: usize) -> Vec<MeasuredPrefix> {
         self.base.autocomplete(query, requested)
     }
+}
+
+#[wasm_bindgen]
+/// Returns the `requested` number of strings with the best prefix edit distance from the `query`
+/// without using an index
+pub fn unindexed_autocomplete(
+    query: &str,
+    requested: usize,
+    source: js_sys::Array,
+) -> Vec<MeasuredPrefix> {
+    let mut internal_strings = Vec::<String>::with_capacity(source.length() as usize);
+    for value in source {
+        if let Some(string) = value.as_string() {
+            internal_strings.push(string);
+        }
+    }
+    let strings: Vec<&str> = internal_strings
+        .iter()
+        .map(|string| string.as_str())
+        .collect();
+    levenshtein::unindexed_autocomplete(query, requested, &strings)
 }
