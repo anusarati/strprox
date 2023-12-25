@@ -1,6 +1,6 @@
 use std::{
     cmp::{max, min, Reverse},
-    collections::{hash_map, BTreeMap, BTreeSet, HashMap},
+    collections::{hash_map, BTreeMap, HashMap, HashSet},
     marker::PhantomData,
     ops::Range,
     result, string,
@@ -407,7 +407,7 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
             query_chars.truncate(UUU::MAX as usize);
         }
 
-        let mut result = BTreeSet::<&'stored str>::new();
+        let mut result = HashSet::<&'stored str>::new();
         let mut threshold = 1;
         let mut active_matching_set = MatchingSet::<'stored, UUU, SSS>::new(&self.trie);
 
@@ -441,7 +441,7 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
         &self,
         node: &Node<UUU, SSS>,
         prefix_edit_distance: usize,
-        result: &mut BTreeSet<&'stored str>,
+        result: &mut HashSet<&'stored str>,
         requested: usize,
     ) -> bool {
         if requested == 0 {
@@ -468,7 +468,7 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
         query_len: usize,
         threshold: usize,
         requested: usize,
-        result: &mut BTreeSet<&'stored str>,
+        result: &mut HashSet<&'stored str>,
     ) -> usize {
         // this may need to become public along with MatchingSet to support result caching for previous query prefixes
         let character = query[query_len - 1];
@@ -605,7 +605,7 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
         active_matching_set: &mut MatchingSet<'stored, UUU, SSS>,
         query: &[char],
         query_len: usize,
-        result: &mut BTreeSet<&'stored str>,
+        result: &mut HashSet<&'stored str>,
         threshold: usize,
         requested: usize,
     ) -> bool {
