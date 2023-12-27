@@ -24,7 +24,7 @@ fn contains_string(measures: &Vec<MeasuredPrefix>, expected: &str) -> bool {
 /// Example input from the paper on META (see the citations)
 fn meta_paper_example() {
     let source = vec!["soho", "solid", "solo", "solve", "soon", "throw"];
-    let autocompleter = Autocompleter::<u8>::new(&source);
+    let autocompleter = Autocompleter::<u8>::new(source.len(),&source);
     let result = autocompleter.autocomplete("ssol", 3);
     for measure in &result {
         println!("{:#?}", measure);
@@ -45,7 +45,7 @@ fn two_categories() {
         "decrease",
         "decreasing",
     ];
-    let autocompleter = Autocompleter::<u8>::new(&source);
+    let autocompleter = Autocompleter::<u8>::new(source.len(),&source);
     let query = "zucc";
     let result = autocompleter.autocomplete(query, 3);
     println!("{}\n", query);
@@ -83,7 +83,7 @@ fn example() {
         "decreasing",
         "decrement",
     ];
-    let autocompleter = Autocompleter::new(&source);
+    let autocompleter = Autocompleter::new(source.len(), &source);
     let query = "luck";
     let result = autocompleter.autocomplete(query, 3);
     for measured_prefix in &result {
@@ -102,7 +102,7 @@ fn insertion_ped() {
     let query = "foob";
     // PEDs: [1, 2, 2]
     let source = vec!["oobf", "fbor", "bobf"];
-    let autocompleter = Autocompleter::<u8>::new(&source);
+    let autocompleter = Autocompleter::<u8>::new(source.len(), &source);
     let result = autocompleter.autocomplete(query, 1);
     for measure in &result {
         println!("{:#?}", measure);
@@ -118,7 +118,7 @@ const WORDS: &str = include_str!("words.txt");
 fn large_database_misspelling() {
     let source: Vec<&str> = WORDS.lines().collect();
     let time = Instant::now();
-    let autocompleter = Autocompleter::<u8>::new(&source);
+    let autocompleter = Autocompleter::<u8>::new(source.len(), &source);
     println!("Indexing took: {:#?}", time.elapsed());
     let requested = 10;
     let result = autocompleter.autocomplete("abandonned", requested);
@@ -134,7 +134,7 @@ fn large_database_misspelling() {
 /// Tests for error-tolerant autocompletion against a large database
 fn large_database_autocomplete() {
     let source: Vec<&str> = WORDS.lines().collect();
-    let autocompleter = Autocompleter::<u8>::new(&source);
+    let autocompleter = Autocompleter::<u8>::new(source.len(), &source);
     let requested = 10;
     let result = autocompleter.autocomplete("oberr", requested);
     assert_eq!(result.len(), requested);
@@ -149,7 +149,7 @@ fn large_database_autocomplete() {
 /// Tests that the result from an empty query still has strings
 fn empty_query_test() {
     let source: Vec<&str> = WORDS.lines().collect();
-    let autocompleter = Autocompleter::<u8>::new(&source);
+    let autocompleter = Autocompleter::<u8>::new(source.len(),&source);
     let result = autocompleter.autocomplete("", 1);
     assert_ne!(result.len(), 0);
 }
@@ -161,7 +161,7 @@ fn empty_query_test() {
 /// Simultaneously tests that the prefix edit distances are correct
 fn large_database_bounded_peds() {
     let source: Vec<&str> = WORDS.lines().collect();
-    let autocompleter = Autocompleter::<u8>::new(&source);
+    let autocompleter = Autocompleter::<u8>::new(source.len(), &source);
     let mut rng = rand::thread_rng();
     let mut total_duration = Duration::new(0, 0);
     const ITERATIONS: usize = 1e3 as usize;

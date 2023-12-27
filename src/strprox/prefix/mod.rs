@@ -80,7 +80,7 @@ pub struct Trie<'stored, UUU, SSS> {
     nodes: TrieNodes<UUU, SSS>,
     #[cfg_attr(feature = "serde", serde(borrow))]
     /// Stored strings
-    strings: TrieStrings<'stored>,
+    pub strings: TrieStrings<'stored>,
 }
 
 /// Returns an Option with the next valid Unicode scalar value after `character`, unless `character` is char::MAX
@@ -305,7 +305,7 @@ impl InvertedIndex<UUU, SSS> {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Autocompleter<'stored, UUU, SSS> {
     #[cfg_attr(feature = "serde", serde(borrow))]
-    trie: Trie<'stored, UUU, SSS>,
+    pub trie: Trie<'stored, UUU, SSS>,
     inverted_index: InvertedIndex<UUU, SSS>,
 }
 
@@ -318,6 +318,9 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
             trie,
             inverted_index,
         }
+    }
+    pub fn len(&self) -> usize {
+        self.trie.strings.len()
     }
 }
 
