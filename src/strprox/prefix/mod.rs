@@ -1,4 +1,5 @@
 use std::{
+    borrow::{Borrow, Cow},
     cmp::{max, min, Reverse},
     collections::{hash_map, BTreeMap, HashMap, HashSet},
     marker::PhantomData,
@@ -51,8 +52,27 @@ impl Node<UUU, SSS> {
     }
 }
 
-type TrieStrings<'stored> = Vec<&'stored str>;
+pub type TreeString<'stored> = Cow<'stored, str>;
+type TrieStrings<'stored> = Vec<TreeString<'stored>>;
 type TrieNodes<UUU, SSS> = Vec<Node<UUU, SSS>>;
+
+pub trait TreeStringT<'a>: 'a + Clone {
+    fn from_string(sx: &'a String) -> Self;
+    fn to_str<'s>(&'s self) -> &'s str;
+    fn from_owned(sx: String) -> Self;
+}
+
+impl<'a> TreeStringT<'a> for Cow<'a, str> {
+    fn from_string(sx: &'a String) -> Self {
+        Cow::Borrowed(sx.as_str())
+    }
+    fn to_str<'s>(&'s self) -> &'s str {
+        &self
+    }
+    fn from_owned(sx: String) -> Self {
+        Cow::Owned(sx)
+    }
+}
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -77,9 +97,9 @@ impl<'stored> Trie<'stored, UUU, SSS> {
         self.nodes.first().unwrap()
     }
     /// Returns trie over `source` (expects `source` to have at most usize::MAX - 1 strings)
-    pub fn new(source: &'stored [&'stored str]) -> Self {
-        let mut strings = TrieStrings::<'stored>::with_capacity(source.len());
-        for string in source.iter() {
+    pub fn new(len: usize, source: impl IntoIterator<Item = TreeString<'stored>>) -> Self {
+        let mut strings = TrieStrings::<'stored>::with_capacity(len);
+        for string in source.into_iter() {
             strings.push(string);
         }
         // sort and dedup to compute the `string_range` for each node using binary search
@@ -87,7 +107,7 @@ impl<'stored> Trie<'stored, UUU, SSS> {
         strings.dedup();
 
         // rough estimate on the size of the trie
-        let nodes = TrieNodes::with_capacity(3 * source.len());
+        let nodes = TrieNodes::with_capacity(3 * len);
 
         let mut trie = Self { strings, nodes };
 
@@ -149,15 +169,18 @@ impl<'stored> Trie<'stored, UUU, SSS> {
 
                     // offset from start where the lexicographic marker would be
                     let offset;
-                    match self.strings[start..end].binary_search(&lexicographic_marker.as_str()) {
+                    match self.strings[start..end]
+                        .binary_search(&TreeStringT::from_string(&lexicographic_marker))
+                    {
                         // same bound either way, but if it's Err it will be the last iteration
                         Ok(x) => offset = x,
                         Err(x) => offset = x,
                     }
                     debug_assert_eq!(
                         offset,
-                        self.strings[start..end]
-                            .partition_point(|&string| string < lexicographic_marker)
+                        self.strings[start..end].partition_point(
+                            |string| string < &TreeStringT::from_string(&lexicographic_marker)
+                        )
                     );
                     child_end = start + offset;
 
@@ -288,8 +311,8 @@ pub struct Autocompleter<'stored, UUU, SSS> {
 
 impl<'stored> Autocompleter<'stored, UUU, SSS> {
     /// Constructs an Autocompleter given the string dataset `source` (does not copy strings)
-    pub fn new(source: &'stored [&'stored str]) -> Self {
-        let trie = Trie::<'stored, UUU, SSS>::new(source);
+    pub fn new(len: usize, source: impl IntoIterator<Item = TreeString<'stored>>) -> Self {
+        let trie = Trie::<'stored, UUU, SSS>::new(len, source);
         let inverted_index = InvertedIndex::<UUU, SSS>::new(&trie);
         Self {
             trie,
@@ -407,7 +430,7 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
             query_chars.truncate(UUU::MAX as usize);
         }
 
-        let mut result = HashSet::<&'stored str>::new();
+        let mut result = HashSet::<TreeString<'stored>>::new();
         let mut threshold = 1;
         let mut active_matching_set = MatchingSet::<'stored, UUU, SSS>::new(&self.trie);
 
@@ -427,7 +450,10 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
             .into_iter()
             .map(|string| MeasuredPrefix {
                 string: string.to_string(),
-                prefix_distance: levenshtein::prefix_edit_distance(query, string),
+                prefix_distance: levenshtein::prefix_edit_distance(
+                    query,
+                    TreeStringT::to_str(&string),
+                ),
             })
             .collect();
 
@@ -441,7 +467,7 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
         &self,
         node: &Node<UUU, SSS>,
         prefix_edit_distance: usize,
-        result: &mut HashSet<&'stored str>,
+        result: &mut HashSet<TreeString<'stored>>,
         requested: usize,
     ) -> bool {
         if requested == 0 {
@@ -450,7 +476,7 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
         debug_assert_ne!(result.len(), requested);
 
         for string_index in node.string_range.clone() {
-            result.insert(self.trie.strings[string_index as usize]);
+            result.insert(self.trie.strings[string_index as usize].clone());
             if result.len() >= requested {
                 return true;
             }
@@ -468,7 +494,7 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
         query_len: usize,
         threshold: usize,
         requested: usize,
-        result: &mut HashSet<&'stored str>,
+        result: &mut HashSet<TreeString<'stored>>,
     ) -> usize {
         // this may need to become public along with MatchingSet to support result caching for previous query prefixes
         let character = query[query_len - 1];
@@ -605,7 +631,7 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
         active_matching_set: &mut MatchingSet<'stored, UUU, SSS>,
         query: &[char],
         query_len: usize,
-        result: &mut HashSet<&'stored str>,
+        result: &mut HashSet<TreeString<'stored>>,
         threshold: usize,
         requested: usize,
     ) -> bool {
