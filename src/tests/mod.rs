@@ -143,6 +143,7 @@ fn large_database_misspelling() {
     assert!(contains_string(&result, "abandoned"));
 }
 
+
 #[test]
 /// Tests for error-tolerant autocompletion against a large database
 fn large_database_autocomplete() {
@@ -156,6 +157,37 @@ fn large_database_autocomplete() {
         println!("{:#?}", measure);
     }
     assert!(contains_string(&result, "overrank"));
+}
+
+
+#[test]
+/// Tests for error-tolerant autocompletion against a large database
+fn large_database_long_query() {
+    let source: Vec<TreeString> = WORDS.lines().map(|k| k.into()).collect();
+    let autocompleter = Autocompleter::<u8>::new(source.len(), source);
+    let requested = 3;
+    println!("begin"); 
+    let result = autocompleter.autocomplete("asfdasdvSDVASDFEWWEFWDASDAS", requested);
+    assert_eq!(result.len(), requested);
+
+    for measure in &result {
+        println!("{:#?}", measure);
+    }
+}
+
+#[test]
+/// Tests for error-tolerant autocompletion against a large database
+fn large_database_long_query_exist() {
+    let source: Vec<TreeString> = WORDS.lines().map(|k| k.into()).collect();
+    let autocompleter = Autocompleter::<u8>::new(source.len(), source);
+    let requested = 3;
+    println!("begin"); // nonsyntactically
+    let result = autocompleter.autocomplete("nonsyntacticallz", requested);
+    assert_eq!(result.len(), requested);
+
+    for measure in &result {
+        println!("{:#?}", measure);
+    }
 }
 
 #[test]

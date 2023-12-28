@@ -10,6 +10,7 @@ use std::{
 use super::{MeasuredPrefix, MeasuredString};
 use crate::levenshtein;
 
+use debug_print::{debug_eprint, debug_println};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use yoke::Yokeable;
@@ -352,7 +353,7 @@ impl<'stored> Matching<'stored, UUU, SSS> {
 #[derive(Debug)]
 struct MatchingSet<'stored, UUU, SSS> {
     /// Maps the first two parts of a matching to the edit distance
-    matchings: HashMap<(UUU, &'stored Node<UUU, SSS>), UUU>,
+    pub matchings: HashMap<(UUU, &'stored Node<UUU, SSS>), UUU>,
 }
 
 impl<'stored> MatchingSet<'stored, UUU, SSS> {
@@ -404,6 +405,9 @@ impl<'stored> Iterator for MatchingSetIter<'_, 'stored, UUU, SSS> {
     }
 }
 
+const MAX_SET: usize = 2000;
+const MAX_DISTANCE: usize = 3;
+
 impl<'stored> Autocompleter<'stored, UUU, SSS> {
     /// Returns the top `requested` number of strings with the best prefix distance from the query
     /// sorted by prefix edit distance and then lexicographical order,
@@ -440,6 +444,17 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
         let mut active_matching_set = MatchingSet::<'stored, UUU, SSS>::new(&self.trie);
 
         for query_prefix_len in 1..=query_chars.len() {
+            if threshold > MAX_DISTANCE || active_matching_set.matchings.len() > MAX_SET {
+                println!("query cancelled");
+                return vec![];
+            }
+            debug_println!(
+                "{}/{}, active matching set, {}, threshold, {}",
+                query_prefix_len,
+                query_chars.len(),
+                active_matching_set.matchings.len(),
+                threshold
+            );
             result.clear();
             threshold = self.autocomplete_step(
                 &mut active_matching_set,
@@ -449,6 +464,7 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
                 requested,
                 &mut result,
             );
+            // dbg!(&result);
         }
 
         let mut result: Vec<MeasuredPrefix> = result
