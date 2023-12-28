@@ -12,6 +12,7 @@ use crate::levenshtein;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+use yoke::Yokeable;
 
 mod compact_tree;
 
@@ -303,6 +304,7 @@ impl InvertedIndex<UUU, SSS> {
 
 /// Structure that allows for autocompletion based on a string dataset
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Yokeable)]
 pub struct Autocompleter<'stored, UUU, SSS> {
     #[cfg_attr(feature = "serde", serde(borrow))]
     pub trie: Trie<'stored, UUU, SSS>,
