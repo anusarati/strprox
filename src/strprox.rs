@@ -1,7 +1,7 @@
 mod prefix;
 use std::{cmp::Ordering, fmt::Display};
 
-pub use prefix::TreeStringT;
+pub use prefix::{TreeString, TreeStringT};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};

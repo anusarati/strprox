@@ -1,5 +1,5 @@
+use crate::{MeasuredPrefix, TreeString};
 use std::cmp::min;
-use crate::MeasuredPrefix;
 
 #[cfg(test)]
 use rand::{
@@ -88,11 +88,18 @@ pub fn edit_distance(first: &str, second: &str) -> usize {
 }
 
 /// Baseline autocomplete using the PED that doesn't use an index
-pub fn unindexed_autocomplete(query: &str, requested: usize, strings: &[&str]) -> Vec<MeasuredPrefix> {
-    let mut measures: Vec<MeasuredPrefix> = strings.iter().map(|string| MeasuredPrefix {
-        string: string.to_string(),
-        prefix_distance: prefix_edit_distance(query, &string),
-    }).collect();
+pub fn unindexed_autocomplete(
+    query: &str,
+    requested: usize,
+    strings: &[TreeString],
+) -> Vec<MeasuredPrefix> {
+    let mut measures: Vec<MeasuredPrefix> = strings
+        .iter()
+        .map(|string| MeasuredPrefix {
+            string: string.to_string(),
+            prefix_distance: prefix_edit_distance(query, &string),
+        })
+        .collect();
     measures.sort();
     measures.dedup();
     measures.truncate(requested);
@@ -149,11 +156,4 @@ pub(crate) fn random_edits(string: &str, edits: usize) -> String {
         result.push(character);
     }
     result
-}
-
-/// Returns a random string from `strings`
-#[cfg(test)]
-pub(crate) fn random_string<'a>(strings: &[&'a str]) -> &'a str {
-    let mut rng = rand::thread_rng();
-    strings[rng.gen_range(0..strings.len())]
 }

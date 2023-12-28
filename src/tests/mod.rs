@@ -6,13 +6,14 @@ use std::{
 
 use rand::{
     distributions::{Distribution, Uniform},
+    seq::SliceRandom,
     Rng,
 };
 
 use crate::{
-    levenshtein::{prefix_edit_distance, random_edits, random_string, unindexed_autocomplete},
+    levenshtein::{prefix_edit_distance, random_edits, unindexed_autocomplete},
     strprox::Autocompleter,
-    MeasuredPrefix,
+    MeasuredPrefix, TreeString,
 };
 
 /// Returns whether any MeasuredPrefix in `measures` has the `expected` string
@@ -23,8 +24,11 @@ fn contains_string(measures: &Vec<MeasuredPrefix>, expected: &str) -> bool {
 #[test]
 /// Example input from the paper on META (see the citations)
 fn meta_paper_example() {
-    let source = vec!["soho", "solid", "solo", "solve", "soon", "throw"];
-    let autocompleter = Autocompleter::<u8>::new(source.len(),&source);
+    let source: Vec<_> = vec!["soho", "solid", "solo", "solve", "soon", "throw"]
+        .into_iter()
+        .map(Into::into)
+        .collect();
+    let autocompleter = Autocompleter::<u8>::new(source.len(), source);
     let result = autocompleter.autocomplete("ssol", 3);
     for measure in &result {
         println!("{:#?}", measure);
@@ -37,15 +41,18 @@ fn meta_paper_example() {
 #[test]
 /// Tests that autocomplete can return exact associated categories
 fn two_categories() {
-    let source = vec![
+    let source: Vec<_> = vec![
         "success",
         "successor",
         "successive",
         "decrement",
         "decrease",
         "decreasing",
-    ];
-    let autocompleter = Autocompleter::<u8>::new(source.len(),&source);
+    ]
+    .into_iter()
+    .map(Into::into)
+    .collect();
+    let autocompleter = Autocompleter::<u8>::new(source.len(), source.clone());
     let query = "zucc";
     let result = autocompleter.autocomplete(query, 3);
     println!("{}\n", query);
@@ -57,7 +64,7 @@ fn two_categories() {
     assert!(contains_string(&result, "success"));
     assert!(contains_string(&result, "successor"));
     assert!(contains_string(&result, "successive"));
-    assert_eq!(result, unindexed_autocomplete("zucc", 3, source.as_slice()));
+    assert_eq!(result, unindexed_autocomplete("zucc", 3, &source));
 
     let query = "deck";
     let result = autocompleter.autocomplete("deck", 3);
@@ -69,21 +76,24 @@ fn two_categories() {
     assert!(contains_string(&result, "decrease"));
     assert!(contains_string(&result, "decreasing"));
 
-    assert_eq!(result, unindexed_autocomplete("deck", 3, source.as_slice()));
+    assert_eq!(result, unindexed_autocomplete("deck", 3, &source));
 }
 
 #[test]
 /// The example in the README
 fn example() {
-    let source = vec![
+    let source: Vec<_> = vec![
         "success",
         "successive",
         "successor",
         "decrease",
         "decreasing",
         "decrement",
-    ];
-    let autocompleter = Autocompleter::new(source.len(), &source);
+    ]
+    .into_iter()
+    .map(|k| k.into())
+    .collect();
+    let autocompleter = Autocompleter::new(source.len(), source);
     let query = "luck";
     let result = autocompleter.autocomplete(query, 3);
     for measured_prefix in &result {
@@ -101,8 +111,11 @@ fn example() {
 fn insertion_ped() {
     let query = "foob";
     // PEDs: [1, 2, 2]
-    let source = vec!["oobf", "fbor", "bobf"];
-    let autocompleter = Autocompleter::<u8>::new(source.len(), &source);
+    let source: Vec<_> = vec!["oobf", "fbor", "bobf"]
+        .into_iter()
+        .map(|k| k.into())
+        .collect();
+    let autocompleter = Autocompleter::<u8>::new(source.len(), source);
     let result = autocompleter.autocomplete(query, 1);
     for measure in &result {
         println!("{:#?}", measure);
@@ -116,9 +129,9 @@ const WORDS: &str = include_str!("words.txt");
 #[test]
 /// Tests for correction of a misspelling against a large database
 fn large_database_misspelling() {
-    let source: Vec<&str> = WORDS.lines().collect();
+    let source: Vec<TreeString> = WORDS.lines().map(|k| k.into()).collect();
     let time = Instant::now();
-    let autocompleter = Autocompleter::<u8>::new(source.len(), &source);
+    let autocompleter = Autocompleter::<u8>::new(source.len(), source);
     println!("Indexing took: {:#?}", time.elapsed());
     let requested = 10;
     let result = autocompleter.autocomplete("abandonned", requested);
@@ -133,8 +146,8 @@ fn large_database_misspelling() {
 #[test]
 /// Tests for error-tolerant autocompletion against a large database
 fn large_database_autocomplete() {
-    let source: Vec<&str> = WORDS.lines().collect();
-    let autocompleter = Autocompleter::<u8>::new(source.len(), &source);
+    let source: Vec<TreeString> = WORDS.lines().map(|k| k.into()).collect();
+    let autocompleter = Autocompleter::<u8>::new(source.len(), source);
     let requested = 10;
     let result = autocompleter.autocomplete("oberr", requested);
     assert_eq!(result.len(), requested);
@@ -148,8 +161,9 @@ fn large_database_autocomplete() {
 #[test]
 /// Tests that the result from an empty query still has strings
 fn empty_query_test() {
-    let source: Vec<&str> = WORDS.lines().collect();
-    let autocompleter = Autocompleter::<u8>::new(source.len(),&source);
+    let source: Vec<TreeString> = WORDS.lines().map(|k| k.into()).collect();
+    println!("words {}", source.len());
+    let autocompleter = Autocompleter::<u8>::new(source.len(), source);
     let result = autocompleter.autocomplete("", 1);
     assert_ne!(result.len(), 0);
 }
@@ -160,16 +174,16 @@ fn empty_query_test() {
 ///
 /// Simultaneously tests that the prefix edit distances are correct
 fn large_database_bounded_peds() {
-    let source: Vec<&str> = WORDS.lines().collect();
-    let autocompleter = Autocompleter::<u8>::new(source.len(), &source);
+    let source: Vec<TreeString> = WORDS.lines().map(|k| k.into()).collect();
+    let autocompleter = Autocompleter::<u8>::new(source.len(), source.clone());
     let mut rng = rand::thread_rng();
     let mut total_duration = Duration::new(0, 0);
     const ITERATIONS: usize = 1e3 as usize;
     for _i in 0..ITERATIONS {
-        let string = random_string(&source[..]);
+        let string = source.choose(&mut rng).unwrap();
         let edits_distribution = Uniform::new(0, 5);
         let edits = edits_distribution.sample(&mut rng);
-        let edited_string = random_edits(string, edits);
+        let edited_string = random_edits(&string, edits);
 
         dbg!(&edited_string);
 
