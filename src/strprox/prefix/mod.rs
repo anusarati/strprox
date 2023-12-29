@@ -444,7 +444,7 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
         let mut active_matching_set = MatchingSet::<'stored, UUU, SSS>::new(&self.trie);
 
         for query_prefix_len in 1..=query_chars.len() {
-            if threshold > MAX_DISTANCE || active_matching_set.matchings.len() > MAX_SET {
+            if threshold > MAX_DISTANCE && active_matching_set.matchings.len() > MAX_SET {
                 println!("query cancelled");
                 return vec![];
             }
@@ -464,7 +464,6 @@ impl<'stored> Autocompleter<'stored, UUU, SSS> {
                 requested,
                 &mut result,
             );
-            // dbg!(&result);
         }
 
         let mut result: Vec<MeasuredPrefix> = result
