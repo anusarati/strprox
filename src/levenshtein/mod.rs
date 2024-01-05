@@ -1,10 +1,9 @@
 use crate::{MeasuredPrefix, TreeString};
-use std::cmp::min;
+use std::{cmp::min, collections::BinaryHeap};
 
 #[cfg(test)]
 use rand::{
     distributions::{
-        uniform::{UniformChar, UniformSampler},
         Distribution, Uniform,
     },
     Rng,
@@ -28,8 +27,8 @@ pub(super) fn final_lev_row(first: &[char], second: &[char]) -> Vec<usize> {
         for column in 1..=second.len() {
             // compare the characters at i - 1 and j - 1
             // (edit_matrix[0, 0] is the edit distance between two empty strings, so i and j are offset by 1)
-            let first_char = &first[row - 1..row];
-            let second_char = &second[column - 1..column];
+            let first_char = &first[row - 1];
+            let second_char = &second[column - 1];
             let diff = (first_char != second_char) as usize;
 
             let replace_dist = prev_row[column - 1] + diff;
@@ -48,14 +47,6 @@ pub(super) fn final_lev_row(first: &[char], second: &[char]) -> Vec<usize> {
 /// Returns `string` as a Vec of its characters
 pub(crate) fn to_char_vec(string: &str) -> Vec<char> {
     string.chars().collect()
-}
-
-pub(crate) fn string_from_chars(chars: Vec<char>) -> String {
-    let mut string = String::with_capacity(chars.len() * 4);
-    for char in chars {
-        string.push(char);
-    }
-    string
 }
 
 /// Returns the prefix edit distance between two strings, where the prefixes of `second` vary
@@ -93,17 +84,18 @@ pub fn unindexed_autocomplete(
     requested: usize,
     strings: &[TreeString],
 ) -> Vec<MeasuredPrefix> {
-    let mut measures: Vec<MeasuredPrefix> = strings
-        .iter()
-        .map(|string| MeasuredPrefix {
+    let mut best = BinaryHeap::new();
+    strings.iter().for_each(|string| {
+        let measure = MeasuredPrefix {
             string: string.to_string(),
             prefix_distance: prefix_edit_distance(query, &string),
-        })
-        .collect();
-    measures.sort();
-    measures.dedup();
-    measures.truncate(requested);
-    measures
+        };
+        best.push(measure);
+        if best.len() > requested {
+            best.pop();
+        }
+    });
+    best.into_sorted_vec()
 }
 
 /// Returns a string with a number of random `edits` to `string`
@@ -111,10 +103,12 @@ pub fn unindexed_autocomplete(
 /// Does not guarantee that the edits are non-overlapping (edit distance may be less than `edits`)
 #[cfg(test)]
 pub(crate) fn random_edits(string: &str, edits: usize) -> String {
+    use rand::distributions::Standard;
+
     let mut string: Vec<char> = string.chars().collect();
 
     let edit_type_distribution = Uniform::new_inclusive(1, 3);
-    let char_distribution = UniformChar::new_inclusive('\0', char::MAX);
+    let char_distribution = Standard;
     let mut rng = rand::thread_rng();
 
     for _i in 0..edits {
@@ -156,4 +150,19 @@ pub(crate) fn random_edits(string: &str, edits: usize) -> String {
         result.push(character);
     }
     result
+}
+
+/// Returns
+/// (a random string from `source`,
+/// a string with a random number of edits between 0 and 5,
+/// number of edits made)
+#[cfg(test)]
+pub(crate) fn sample_edited_string<'s>(source: &'s [&str], rng: &mut impl Rng) -> (&'s str, String, usize) {
+    use rand::seq::SliceRandom;
+
+    let &string = source.choose(rng).unwrap();
+    let edits_distribution = Uniform::new(0, 5);
+    let edits = edits_distribution.sample(rng);
+    let edited_string = random_edits(string, edits);
+    (string, edited_string, edits)
 }

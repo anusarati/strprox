@@ -1,7 +1,7 @@
-mod prefix;
+pub mod prefix;
 use std::{cmp::Ordering, fmt::Display};
 
-pub use prefix::{TreeString, TreeStringT};
+pub use prefix::meta::{TreeString, TreeStringT};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -33,7 +33,7 @@ impl Ord for MeasuredString {
 }
 
 /// Structure that associates a string with its its prefix edit distance from the query
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "wasm", wasm_bindgen(getter_with_clone))]
 pub struct MeasuredPrefix {
@@ -68,6 +68,11 @@ impl Display for MeasuredPrefix {
     }
 }
 
+//#[doc(inline)]
 #[doc(inline)]
-pub type Autocompleter<'stored, U = u8, S = u32> = prefix::Autocompleter<'stored, U, S>;
+pub use prefix::Autocompleter;
+#[doc(inline)]
+pub use prefix::fst::FstAutocompleter;
+#[doc(inline)]
+pub use prefix::meta::MetaAutocompleter as MetaAutocompleter;
 //pub type StringSearcher<'a, U> = HSTree<'a, U>;
