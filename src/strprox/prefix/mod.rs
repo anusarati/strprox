@@ -2,10 +2,17 @@ use std::collections::BinaryHeap;
 
 use crate::MeasuredPrefix;
 
+pub mod tree_string;
 pub mod fst;
-pub mod meta;
+
+/// Iterator that returns strings closest to a query
+pub trait TopIter {
+}
 
 pub trait Autocompleter {
+    /// Returns an iterator that returns strings with their PEDs from the `query`, in ascending order by PED
+    fn top_iter(&self, query: &str) -> impl Iterator<Item = MeasuredPrefix>;
+
     /// Returns the `requested` number of strings with the best PEDs that are at most `max_threshold`,
     /// or all strings available with PEDs within `max_threshold`
     ///
@@ -17,7 +24,18 @@ pub trait Autocompleter {
         query: &str,
         requested: usize,
         max_threshold: usize,
-    ) -> Vec<MeasuredPrefix>;
+    ) -> Vec<MeasuredPrefix> {
+        if requested == 0 { return vec![]; }
+        let mut iter = self.top_iter(query);
+        let mut result = vec![];
+        while let Some(measure) = iter.next() {
+            // this comes from an unnecessary search when using the automaton intersection
+            if measure.prefix_distance > max_threshold { break; }
+            result.push(measure);
+            if result.len() == requested { break; }
+        }
+        result
+    }
 
     /// Returns the `requested` number of strings with the best PEDs, or all strings available if less than `requested`
     ///

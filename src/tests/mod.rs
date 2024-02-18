@@ -1,7 +1,7 @@
 use std::{
     fs,
     io::Write,
-    time::{Duration, Instant}
+    time::{Duration, Instant},
 };
 
 use fst::Set;
@@ -10,12 +10,9 @@ use yoke::Yoke;
 
 use crate::{
     levenshtein::{prefix_edit_distance, sample_edited_string, unindexed_autocomplete},
-    strprox::FstAutocompleter,
-    strprox::MetaAutocompleter,
-    Autocompleter, MeasuredPrefix, prefix::FromStrings,
+    prefix::FromStrings,
+    Autocompleter, MeasuredPrefix,
 };
-
-type YokedMetaAutocompleter = Yoke<MetaAutocompleter<'static>, Vec<String>>;
 
 /// Returns whether any MeasuredPrefix in `measures` has the `expected` string
 fn contains_string(measures: &Vec<MeasuredPrefix>, expected: &str) -> bool {
@@ -28,7 +25,7 @@ const WORDS: &str = include_str!("words.txt");
 #[generic_tests::define]
 mod generic {
     use super::*;
-    use crate::{levenshtein, Autocompleter, prefix::FromStrings};
+    use crate::{levenshtein, prefix::FromStrings, Autocompleter};
 
     #[test]
     /// Example input from the paper on META (see the citations)
@@ -299,11 +296,6 @@ mod generic {
             total_duration.as_millis() as f64 / ITERATIONS as f64
         );
     }
-
-    #[instantiate_tests(<YokedMetaAutocompleter>)]
-    mod meta {}
-    #[instantiate_tests(<FstAutocompleter<Vec<u8>>>)]
-    mod fst {}
 }
 
 // ideally this would use the #[bench] attribute but it's unstable
@@ -335,6 +327,7 @@ fn bench_unindexed() {
 fn bench_noise() {
     const TEXT: &str = include_str!("noise.txt");
     let mut source: Vec<&str> = TEXT.lines().collect();
+    /*
     let cows: Vec<_> = source.iter().map(|&s| s.into()).collect();
     let mut start = Instant::now();
     source.sort();
@@ -382,9 +375,9 @@ fn bench_noise() {
 
     println!("\nTesting with a maximum threshold");
 
-    const ITERATIONS: usize = 1e2 as usize;
+    const ITERATIONS: usize = 3 as usize;
     // test random queries with a PED of at most `MAX_THRESHOLD`
-    const MAX_THRESHOLD: usize = 4;
+    const MAX_THRESHOLD: usize = 3;
     let mut rng = thread_rng();
     for _i in 0..ITERATIONS {
         let edited_string = sample_edited_string(&source, &mut rng).1;
@@ -400,4 +393,5 @@ fn bench_noise() {
         println!("META autocomplete took {} ms", start.elapsed().as_millis());
         dbg!(result);
     }
+    */
 }

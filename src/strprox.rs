@@ -1,19 +1,13 @@
 pub mod prefix;
 use std::{cmp::Ordering, fmt::Display};
 
-pub use prefix::meta::{TreeString, TreeStringT};
+pub use prefix::tree_string::{TreeString, TreeStringT};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 //
 #[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
-
-/*
-mod hs_tree;
-use hs_tree::HSTree;
-use hs_tree::Rankings;
-*/
 
 /// Structure that associates a string with its Levenshtein distance from the query
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -68,11 +62,5 @@ impl Display for MeasuredPrefix {
     }
 }
 
-//#[doc(inline)]
 #[doc(inline)]
 pub use prefix::Autocompleter;
-#[doc(inline)]
-pub use prefix::fst::FstAutocompleter;
-#[doc(inline)]
-pub use prefix::meta::MetaAutocompleter as MetaAutocompleter;
-//pub type StringSearcher<'a, U> = HSTree<'a, U>;
