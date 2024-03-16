@@ -1,98 +1,133 @@
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{BTreeSet, HashMap},
+    ops::{Index, IndexMut},
+};
 
-use fst::raw::{CompiledAddr, Fst};
-
-// Automaton states and transitions roughly based on formulation by Touzet
-// however bit-vectors are not used
-// doi:10.1007/978-3-319-30000-9_16
-
-/// Autocompleter that uses the intersection between a non-deterministic
-/// Levenshtein automaton and an FST
-pub struct A2<D: AsRef<[u8]>> {
-    pub index: Fst<D>,
-}
-
-/// A state in a non-deterministic Levenshtein automaton
-#[derive(PartialEq, Eq, Hash, Clone, Copy)]
-struct State {
-    /// Edit distance from the automaton's string
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+/// A state in a Levenshtein NFA
+struct Position {
+    pos: u8,
     dist: u8,
-    /// Index to the current character
-    index: u8,
 }
 
-/// Iterator through the strings with the least prefix edit distances from a query
-pub struct A2Iter<'a, D: AsRef<[u8]>> {
-    index: &'a Fst<D>,
-    target: u8,
-    query: Vec<char>,
-    char_positions: HashMap<char, Vec<usize>>,
-    buffer: Vec<(HashSet<State>, String, CompiledAddr)>,
+impl Position {
+    fn subsumes(&self, other: Position) -> bool {
+        other.dist > self.dist && other.pos.abs_diff(self.pos) <= other.dist - self.dist
+    }
 }
 
-impl<D: AsRef<[u8]>> A2Iter<'_, D> {
-    /// Returns the next set of states given the `input_char` from the dataset,
-    /// whether the minimum edit distance is within the target,
-    /// and whether it is an accepting state (based on current target PED)
-    fn next_states(
-        &self,
-        states: &HashSet<State>,
-        input_char: char,
-    ) -> (HashSet<State>, bool, bool) {
-        let mut new_states = HashSet::<State>::with_capacity(2 * states.len());
-        let mut target_possible = false;
-        let mut target_met = false;
-        for state in states {
-            if let Some(&query_char) = self.query.get(state.index as usize) {
-                // all states below the target should have already been visited
-                debug_assert!(state.dist >= self.target);
-                if query_char == input_char {
-                    // the edit distance has not changed; check the next character later
-                    new_states.insert(State {
-                        dist: state.dist,
-                        index: state.index + 1,
-                    });
-                    if state.dist == self.target {
-                        target_possible = true;
-                        // accepting state
-                        if state.index == self.query.len() as u8 - 1 { target_met = true; }
-                    }
-                } else {
-                    // possible edits to automaton's strings includes insertion and substitution
-                    let insert_state = State {
-                        dist: state.dist + 1,
-                        // insert `input_char` before `query_char` to match
-                        index: state.index,
-                    };
-                    let sub_state = State {
-                        dist: state.dist + 1,
-                        index: state.index + 1,
-                    };
-                    new_states.insert(insert_state);
-                    new_states.insert(sub_state);
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+/// A state in a Levenshtein DFA
+struct State {
+    positions: BTreeSet<Position>,
+}
 
-                    // check for a deletion state (see paper by Touzet)
-                    if let Some(positions) = self.char_positions.get(&input_char) {
-                        let index = state.index as usize;
-                        let next_match_pos = positions.partition_point(|&pos| pos <= index);
-                        if next_match_pos < self.query.len() {
-                            let deletions = next_match_pos - index;
-                            let del_state = State {
-                                dist: state.dist + deletions as u8,
-                                index: next_match_pos as u8 + 1,
-                            };
-                            new_states.insert(del_state);
-                        }
-                    }
-                }
+#[derive(Default)]
+struct States {
+    /// Numeric labels for each state
+    numbers: HashMap<*const State, usize>,
+    states: Vec<State>,
+}
+
+impl States {
+    /// Returns the number of `state`
+    fn insert(&mut self, state: State) -> usize {
+        self.states.push(state);
+        self.numbers
+            .insert(self.states.last().unwrap(), self.states.len());
+        self.states.len() - 1
+    }
+}
+
+/// A DFA for Levenshtein distance from the `base` string
+///
+/// `base` may not include '\0'
+struct LevDFA {
+    base: Vec<char>,
+
+    /// Tracked states labeled with numbers
+    current_states: States,
+    next_states: States,
+
+    transitions: HashMap<(usize, Input), usize>,
+    table: InputTable,
+}
+
+/// A bit-vector corresponding to which characters in a string match
+/// used as input to the automaton (aka characteristic vector)
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct Input {
+    matches: [bool; 256],
+}
+
+impl Default for Input {
+    fn default() -> Self {
+        Self {
+            matches: [false; 256],
+        }
+    }
+}
+
+/// Maps a character to an input bit-vector
+struct InputTable {
+    table: HashMap<char, Input>,
+}
+
+impl InputTable {
+    /// Returns input table that maps all characters in a Vec<char> to a characteristic vector
+    fn new(base: &Vec<char>) -> Self {
+        let mut table = HashMap::<char, Input>::new();
+        for (index, &character) in base.iter().enumerate() {
+            if let Some(input) = table.get_mut(&character) {
+                input.matches[index] = true;
             } else {
-                // the entire string of the automaton has been checked
-                new_states.insert(State {
-                    dist: state.dist + 1,
-                    index: state.index,
-                });
+                let mut matches = [false; 256];
+                matches[index] = true;
+                table.insert(character, Input { matches });
             }
         }
-        (new_states, target_possible, target_met)
+        Self { table }
     }
+}
+
+const NULL_INPUT: Input = Input {
+    matches: [false; 256],
+};
+
+impl Index<char> for InputTable {
+    type Output = Input;
+    /// Returns the characteristic vector for the `current` character
+    ///
+    /// If `current` was not in the original string, returns a null vector
+    fn index(&self, current: char) -> &Input {
+        self.table.get(&current).unwrap_or(&NULL_INPUT)
+    }
+}
+
+impl LevDFA {
+    /// Returns an empty LevDFA for the `base` string
+    pub(super) fn new(base: String) -> Self {
+        let base = base.chars().collect();
+        let table = InputTable::new(&base);
+        Self {
+            base,
+            current_states: Default::default(),
+            next_states: Default::default(),
+            transitions: Default::default(),
+            table,
+        }
+    }
+    /// Adds the transition from `state` and the `current` character in the other string
+    /// to the automaton; does nothing if it already exists
+    pub(super) fn add_transition(&mut self, state: &State, input: char) {
+        let characteristic = self.table[input];
+        let number = *self.current_states.numbers.get(state).unwrap();
+        if !self.transitions.contains_key(&(number, characteristic)) {
+            let next = self.delta(number, characteristic);
+            let next_num = self.next_states.insert(next);
+            self.transitions.insert((number, characteristic), next_num);
+        }
+    }
+    /// Returns the new state given a characteristic input vector
+    fn delta(&self, state_num: usize, characteristic: Input) -> State {}
 }
