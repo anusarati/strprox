@@ -6,50 +6,85 @@ use std::{
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 /// A state in a Levenshtein NFA
 struct Position {
+    /// The position in the base string (length of prefix)
     pos: u8,
+    /// The edit distance from the base prefix
     dist: u8,
 }
 
 impl Position {
-    fn subsumes(&self, other: Position) -> bool {
-        other.dist > self.dist && other.pos.abs_diff(self.pos) <= other.dist - self.dist
+    /// Returns whether this position makes `other` redundant
+    /// (subsume or equal)
+    fn subsume_eq(&self, other: Position) -> bool {
+        other.dist >= self.dist && other.pos.abs_diff(self.pos) <= other.dist - self.dist
+    }
+    /// Returns the position after matching the current character
+    fn after_match(&self) -> Position {
+        Position {
+            pos: self.pos + 1,
+            dist: self.dist,
+        }
+    }
+    /// Returns the position after inserting at the current position
+    fn after_insert(&self) -> Position {
+        Position {
+            pos: self.pos,
+            dist: self.dist + 1,
+        }
+    }
+    /// Returns the position after erasing at the current position
+    fn after_erase(&self, characteristic: &Input) -> Position {
+        let next_char_different = !characteristic[self.pos as usize + 1] as u8;
+        Position {
+            pos: self.pos + 1,
+            dist: self.dist + 1 + next_char_different,
+        }
+    }
+}
+
+impl PartialOrd for Position {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+/// Compare by edit distance and then by position in base string
+/// to find subsumed states quickly
+impl Ord for Position {
+    // idea based on Dylon Edwards' liblevenshtein
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.dist
+            .cmp(&other.dist)
+            .then_with(|| self.pos.cmp(&other.pos))
     }
 }
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 /// A state in a Levenshtein DFA
 struct State {
-    positions: BTreeSet<Position>,
+    positions: Vec<Position>,
 }
 
-#[derive(Default)]
-struct States {
-    /// Numeric labels for each state
-    numbers: HashMap<*const State, usize>,
-    states: Vec<State>,
-}
-
-impl States {
-    /// Returns the number of `state`
-    fn insert(&mut self, state: State) -> usize {
-        self.states.push(state);
-        self.numbers
-            .insert(self.states.last().unwrap(), self.states.len());
-        self.states.len() - 1
+impl State {
+    /// Inserts a position into the deterministic state, removing all redundant positions
+    fn insert(&mut self, position: Position) {
+        let mut idx = 0;
+        while idx < self.positions.len() {
+            if position.subsume_eq(self.positions[idx]) {
+                self.positions.swap_remove(idx);
+            } else {
+                idx += 1;
+            }
+        }
+        self.positions.push(position)
     }
 }
 
-/// A DFA for Levenshtein distance from the `base` string
+/// An NFA for Levenshtein distance from the `base` string
 ///
 /// `base` may not include '\0'
-struct LevDFA {
+struct LevNFA {
     base: Vec<char>,
-
-    /// Tracked states labeled with numbers
-    current_states: States,
-    next_states: States,
-
-    transitions: HashMap<(usize, Input), usize>,
     table: InputTable,
 }
 
@@ -68,25 +103,53 @@ impl Default for Input {
     }
 }
 
+impl Index<usize> for Input {
+    type Output = bool;
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.matches[index]
+    }
+}
+
 /// Maps a character to an input bit-vector
 struct InputTable {
-    table: HashMap<char, Input>,
+    characteristic_table: HashMap<char, Input>,
+    matching_indices: HashMap<char, Vec<u8>>,
 }
 
 impl InputTable {
-    /// Returns input table that maps all characters in a Vec<char> to a characteristic vector
+    /// Returns table that maps all characters in a string to a characteristic vector
     fn new(base: &Vec<char>) -> Self {
-        let mut table = HashMap::<char, Input>::new();
+        let mut characteristic_table = HashMap::<char, Input>::new();
+        let mut matching_indices = HashMap::<char, Vec<u8>>::new();
         for (index, &character) in base.iter().enumerate() {
-            if let Some(input) = table.get_mut(&character) {
+            if let Some(indices) = matching_indices.get_mut(&character) {
                 input.matches[index] = true;
+                matching_indices[&character].push(index as u8);
             } else {
                 let mut matches = [false; 256];
                 matches[index] = true;
-                table.insert(character, Input { matches });
+                characteristic_table.insert(character, Input { matches });
+                matching_indices.insert(character, vec![index as u8]);
             }
         }
-        Self { table }
+        Self {
+            characteristic_table,
+            matching_indices,
+        }
+    }
+    /// Returns index of closest character in base string that equals `input`,
+    /// if any
+    fn closest_match(&self, input: char, index: usize) -> Option<usize> {
+        if let Some(indices) = self.matching_indices.get(&input) {
+            let idx = indices.partition_point(|&matching| matching < index as u8);
+            if idx >= indices.len() {
+                None
+            } else {
+                Some(idx)
+            }
+        } else {
+            None
+        }
     }
 }
 
@@ -103,31 +166,27 @@ impl Index<char> for InputTable {
         self.table.get(&current).unwrap_or(&NULL_INPUT)
     }
 }
-
-impl LevDFA {
+impl Position {
+    /// Returns the next possible positions given a position and an input
+    fn delta(&self, characteristic: &Input) -> Vec<Position> {
+        if characteristic[self.pos as usize] {
+            vec![self.after_match()]
+        } else {
+            vec![self.after_insert(), self.after_erase(characteristic)]
+        }
+    }
+}
+impl State {
+    /// Returns the new state given a characteristic input vector
+    fn delta(&self, current: &State, characteristic: &Input) -> State {
+        todo!()
+    }
+}
+impl LevNFA {
     /// Returns an empty LevDFA for the `base` string
     pub(super) fn new(base: String) -> Self {
         let base = base.chars().collect();
         let table = InputTable::new(&base);
-        Self {
-            base,
-            current_states: Default::default(),
-            next_states: Default::default(),
-            transitions: Default::default(),
-            table,
-        }
+        Self { base, table }
     }
-    /// Adds the transition from `state` and the `current` character in the other string
-    /// to the automaton; does nothing if it already exists
-    pub(super) fn add_transition(&mut self, state: &State, input: char) {
-        let characteristic = self.table[input];
-        let number = *self.current_states.numbers.get(state).unwrap();
-        if !self.transitions.contains_key(&(number, characteristic)) {
-            let next = self.delta(number, characteristic);
-            let next_num = self.next_states.insert(next);
-            self.transitions.insert((number, characteristic), next_num);
-        }
-    }
-    /// Returns the new state given a characteristic input vector
-    fn delta(&self, state_num: usize, characteristic: Input) -> State {}
 }
