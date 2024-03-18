@@ -14,6 +14,8 @@ use crate::{
     Autocompleter, MeasuredPrefix,
 };
 
+use crate::prefix::fst::NFAAutocompleter;
+
 /// Returns whether any MeasuredPrefix in `measures` has the `expected` string
 fn contains_string(measures: &Vec<MeasuredPrefix>, expected: &str) -> bool {
     measures.iter().any(|measure| measure.string == expected)
@@ -296,6 +298,9 @@ mod generic {
             total_duration.as_millis() as f64 / ITERATIONS as f64
         );
     }
+
+    #[instantiate_tests(<NFAAutocompleter<Vec<u8>>>)]
+    mod nfa {}
 }
 
 // ideally this would use the #[bench] attribute but it's unstable

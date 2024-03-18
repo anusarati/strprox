@@ -5,10 +5,6 @@ use crate::MeasuredPrefix;
 pub mod tree_string;
 pub mod fst;
 
-/// Iterator that returns strings closest to a query
-pub trait TopIter {
-}
-
 pub trait Autocompleter {
     /// Returns an iterator that returns strings with their PEDs from the `query`, in ascending order by PED
     fn top_iter(&self, query: &str) -> impl Iterator<Item = MeasuredPrefix>;
@@ -25,15 +21,15 @@ pub trait Autocompleter {
         requested: usize,
         max_threshold: usize,
     ) -> Vec<MeasuredPrefix> {
-        if requested == 0 { return vec![]; }
-        let mut iter = self.top_iter(query);
         let mut result = vec![];
-        while let Some(measure) = iter.next() {
+        let iter = self.top_iter(query);
+
+        for measure in iter.take(requested) {
             // this comes from an unnecessary search when using the automaton intersection
             if measure.prefix_distance > max_threshold { break; }
             result.push(measure);
-            if result.len() == requested { break; }
         }
+
         result
     }
 

@@ -1,4 +1,5 @@
 use std::{
+    cmp::min,
     collections::{BTreeSet, HashMap},
     ops::{Index, IndexMut},
 };
@@ -25,6 +26,13 @@ impl Position {
             dist: self.dist,
         }
     }
+    /// Returns the position after replacing the current character
+    fn after_replace(&self) -> Position {
+        Position {
+            pos: self.pos + 1,
+            dist: self.dist + 1,
+        }
+    }
     /// Returns the position after inserting at the current position
     fn after_insert(&self) -> Position {
         Position {
@@ -32,12 +40,12 @@ impl Position {
             dist: self.dist + 1,
         }
     }
-    /// Returns the position after erasing at the current position
-    fn after_erase(&self, characteristic: &Input) -> Position {
-        let next_char_different = !characteristic[self.pos as usize + 1] as u8;
+    /// Returns the position after erasing until `matching_idx` is reached in the string
+    fn after_erase(&self, matching_idx: usize) -> Position {
+        let idx = matching_idx as u8;
         Position {
-            pos: self.pos + 1,
-            dist: self.dist + 1 + next_char_different,
+            pos: idx,
+            dist: self.dist + (idx - self.pos),
         }
     }
 }
@@ -59,7 +67,7 @@ impl Ord for Position {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug, Default)]
 /// A state in a Levenshtein DFA
 struct State {
     positions: Vec<Position>,
@@ -110,83 +118,171 @@ impl Index<usize> for Input {
     }
 }
 
-/// Maps a character to an input bit-vector
+struct MatchingIndices {
+    indices: Vec<u8>,
+}
+
+impl MatchingIndices {
+    /// Returns the index closest to the position `pos` in the base string
+    /// if any
+    fn closest_match(&self, pos: u8) -> Option<usize> {
+        let idx = self.indices.partition_point(|&index| index < pos);
+        if idx >= self.indices.len() {
+            None
+        } else {
+            Some(idx)
+        }
+    }
+    fn new(index: usize) -> Self {
+        Self {
+            indices: vec![index as u8],
+        }
+    }
+    fn push(&mut self, index: usize) {
+        self.indices.push(index as u8)
+    }
+}
+
+/// Maps a character to its matching indices in a base string
 struct InputTable {
-    characteristic_table: HashMap<char, Input>,
-    matching_indices: HashMap<char, Vec<u8>>,
+    map: HashMap<char, MatchingIndices>,
 }
 
 impl InputTable {
     /// Returns table that maps all characters in a string to a characteristic vector
     fn new(base: &Vec<char>) -> Self {
-        let mut characteristic_table = HashMap::<char, Input>::new();
-        let mut matching_indices = HashMap::<char, Vec<u8>>::new();
+        let mut map = HashMap::<char, MatchingIndices>::new();
         for (index, &character) in base.iter().enumerate() {
-            if let Some(indices) = matching_indices.get_mut(&character) {
-                input.matches[index] = true;
-                matching_indices[&character].push(index as u8);
+            if let Some(indices) = map.get_mut(&character) {
+                indices.push(index);
             } else {
-                let mut matches = [false; 256];
-                matches[index] = true;
-                characteristic_table.insert(character, Input { matches });
-                matching_indices.insert(character, vec![index as u8]);
+                map.insert(character, MatchingIndices::new(index));
             }
         }
-        Self {
-            characteristic_table,
-            matching_indices,
-        }
+        Self { map }
     }
-    /// Returns index of closest character in base string that equals `input`,
+    /// Returns indices into base string where the character equals `input`,
     /// if any
-    fn closest_match(&self, input: char, index: usize) -> Option<usize> {
-        if let Some(indices) = self.matching_indices.get(&input) {
-            let idx = indices.partition_point(|&matching| matching < index as u8);
-            if idx >= indices.len() {
-                None
-            } else {
-                Some(idx)
+    fn matching_indices(&self, input: char) -> Option<&MatchingIndices> {
+        self.map.get(&input)
+    }
+}
+
+impl Position {
+    /// Returns the next possible positions from this position
+    /// given the index of the closest matching character to the input
+    fn delta(&self, indices: Option<&MatchingIndices>) -> Vec<Position> {
+        if let Some(indices) = indices {
+            let closest = indices.closest_match(self.pos);
+            match closest {
+                Some(idx) => {
+                    if idx as u8 == self.pos {
+                        vec![self.after_match()]
+                    } else {
+                        vec![
+                            self.after_replace(),
+                            self.after_insert(),
+                            self.after_erase(idx),
+                        ]
+                    }
+                }
+                None => {
+                    vec![self.after_replace(), self.after_insert()]
+                }
             }
         } else {
-            None
+            vec![self.after_replace(), self.after_insert()]
         }
     }
 }
 
-const NULL_INPUT: Input = Input {
-    matches: [false; 256],
-};
-
-impl Index<char> for InputTable {
-    type Output = Input;
-    /// Returns the characteristic vector for the `current` character
-    ///
-    /// If `current` was not in the original string, returns a null vector
-    fn index(&self, current: char) -> &Input {
-        self.table.get(&current).unwrap_or(&NULL_INPUT)
-    }
-}
-impl Position {
-    /// Returns the next possible positions given a position and an input
-    fn delta(&self, characteristic: &Input) -> Vec<Position> {
-        if characteristic[self.pos as usize] {
-            vec![self.after_match()]
-        } else {
-            vec![self.after_insert(), self.after_erase(characteristic)]
-        }
-    }
-}
 impl State {
-    /// Returns the new state given a characteristic input vector
-    fn delta(&self, current: &State, characteristic: &Input) -> State {
-        todo!()
+    /// Returns the new state given the indices matching the input character
+    fn delta(&self, indices: Option<&MatchingIndices>) -> State {
+        let mut next_state = State::default();
+        for position in &self.positions {
+            for next_position in position.delta(indices) {
+                next_state.insert(next_position)
+            }
+        }
+        next_state
+    }
+    /// Returns the minimum edit distance from the `base` string based on the input received
+    pub fn min_dist(&self) -> u8 {
+        self.positions
+            .iter()
+            .map(|position| position.dist)
+            .min()
+            .unwrap_or(u8::MAX)
     }
 }
+
 impl LevNFA {
-    /// Returns an empty LevDFA for the `base` string
-    pub(super) fn new(base: String) -> Self {
+    /// Returns an empty LevNFA for the `base` string
+    pub fn new(base: &str) -> Self {
         let base = base.chars().collect();
         let table = InputTable::new(&base);
         Self { base, table }
+    }
+    /// Returns the next state given the input
+    pub fn delta(&self, current: &State, input: char) -> State {
+        current.delta(self.table.matching_indices(input))
+    }
+}
+
+/// A state that tracks the minimum known prefix edit distance
+pub struct PrefixState {
+    state: State,
+    upper_bound: u8,
+}
+
+impl PrefixState {
+    pub fn new() -> Self {
+        PrefixState {
+            state: State::default(),
+            upper_bound: u8::MAX,
+        }
+    }
+    /// Returns upper bound on the prefix distance between the base and input string
+    pub fn prefix_dist_bound(&self) -> u8 {
+        self.upper_bound
+    }
+    /// Returns the minimum prefix edit distance from the base string based on the input received
+    pub fn min_dist(&self) -> u8 {
+        min(self.state.min_dist(), self.upper_bound)
+    }
+}
+
+/// Levenshtein NFA that tracks the prefix edit distance
+pub struct PrefixLevNFA {
+    base: LevNFA,
+}
+
+impl PrefixLevNFA {
+    /// Returns NFA with states with edit distance information from the `base_string`
+    pub fn new(base_string: &str) -> Self {
+        Self {
+            base: LevNFA::new(base_string),
+        }
+    }
+    /// Returns the next state given the current state and an input character
+    pub fn delta(&self, current: &PrefixState, input: char) -> PrefixState {
+        let state = self.base.delta(&current.state, input);
+
+        let upper_bound = min(
+            current.prefix_dist_bound(),
+
+            // unlike state.min_dist(), this only changes the upper bound
+            // if an edit distance (maybe unoptimal) is known for the entire base string
+            state
+                .positions
+                .iter()
+                .filter(|position| position.pos == self.base.base.len() as u8)
+                .map(|position| position.dist)
+                .min()
+                .unwrap_or(u8::MAX),
+        );
+
+        PrefixState { state, upper_bound }
     }
 }

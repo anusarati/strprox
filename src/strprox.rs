@@ -26,7 +26,7 @@ impl Ord for MeasuredString {
     }
 }
 
-/// Structure that associates a string with its its prefix edit distance from the query
+/// Structure that associates a string with its prefix edit distance from the query
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "wasm", wasm_bindgen(getter_with_clone))]
@@ -34,6 +34,7 @@ pub struct MeasuredPrefix {
     pub string: String,
     pub prefix_distance: usize,
 }
+
 impl Ord for MeasuredPrefix {
     /// Compare the prefix and then the strings for MeasuredPrefix
     fn cmp(&self, other: &Self) -> Ordering {
