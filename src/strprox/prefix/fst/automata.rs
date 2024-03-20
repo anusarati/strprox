@@ -86,8 +86,6 @@ impl State {
 }
 
 /// An NFA for Levenshtein distance from the `base` string
-///
-/// `base` may not include '\0'
 pub struct LevNFA {
     base: Vec<char>,
     table: InputTable,
