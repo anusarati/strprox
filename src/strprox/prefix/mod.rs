@@ -25,11 +25,11 @@ pub trait Autocompleter {
         let iter = self.top_iter(query);
 
         for measure in iter.take(requested) {
-            // this comes from an unnecessary search when using the automaton intersection
             if measure.prefix_distance > max_threshold { break; }
             result.push(measure);
         }
 
+        result.sort();
         result
     }
 

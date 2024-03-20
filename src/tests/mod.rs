@@ -41,6 +41,8 @@ mod generic {
         for measure in &result {
             println!("{:#?}", measure);
         }
+
+        assert_eq!(result.len(), 3);
         // these are the only strings with PEDs of 1
         assert!(contains_string(&result, "solid"));
         assert!(contains_string(&result, "solo"));
@@ -62,7 +64,7 @@ mod generic {
         ];
         let autocompleter = A::from_strings(&source);
         let query = "zucc";
-        let result = autocompleter.autocomplete(query, 3);
+        let result = autocompleter.autocomplete(query, 3).into_iter().collect();
         println!("{}\n", query);
         for measure in &result {
             println!("{:#?}", measure);
@@ -290,7 +292,9 @@ mod generic {
             );
             assert!(
                 result.prefix_distance <= edits,
-                "Resulting prefix edit distance not bounded by edits made"
+                "Resulting prefix edit distance {} not bounded by edits made {}",
+                result.prefix_distance,
+                edits
             );
         }
         println!(
@@ -332,14 +336,14 @@ fn bench_unindexed() {
 fn bench_noise() {
     const TEXT: &str = include_str!("noise.txt");
     let mut source: Vec<&str> = TEXT.lines().collect();
-    /*
+
     let cows: Vec<_> = source.iter().map(|&s| s.into()).collect();
     let mut start = Instant::now();
     source.sort();
 
     println!("Testing without a max threshold");
 
-    let fst_autocomp = FstAutocompleter::from_strings(&source);
+    let fst_autocomp = NFAAutocompleter::from_strings(&source);
     println!("FST indexing took {} ms", start.elapsed().as_millis());
 
     let requested = 10;
@@ -355,7 +359,7 @@ fn bench_noise() {
 
     start = Instant::now();
     let fst_data = fs::read("src/tests/noise.fst").expect("noise.fst should exist");
-    let fst_autocomp = FstAutocompleter::new(Set::new(fst_data).unwrap().into_fst());
+    let fst_autocomp = NFAAutocompleter::new(Set::new(fst_data).unwrap().into_fst());
     println!(
         "Construction from file took {} ms",
         start.elapsed().as_millis()
@@ -372,12 +376,6 @@ fn bench_noise() {
         println!("{}", measure);
     }
 
-    // my implementation of META is too slow for the zzz query
-
-    start = Instant::now();
-    let meta_autocomp = MetaAutocompleter::new(cows.len(), cows);
-    println!("META indexing took {} ms", start.elapsed().as_millis());
-
     println!("\nTesting with a maximum threshold");
 
     const ITERATIONS: usize = 3 as usize;
@@ -390,13 +388,7 @@ fn bench_noise() {
 
         start = Instant::now();
         let result = fst_autocomp.threshold_topk(query, requested, MAX_THRESHOLD);
-        println!("Fst autocomplete took {} ms", start.elapsed().as_millis());
-        dbg!(result);
-
-        start = Instant::now();
-        let result = meta_autocomp.threshold_topk(query, requested, MAX_THRESHOLD);
-        println!("META autocomplete took {} ms", start.elapsed().as_millis());
+        println!("NFA autocomplete took {} ms", start.elapsed().as_millis());
         dbg!(result);
     }
-    */
 }

@@ -5,13 +5,13 @@ strprox is a library that currently allows for top-k string autocompletion.
 This is intended to implement the top-k "matching-based framework for error-tolerant autocompletion" algorithm from the paper by Deng et al. (see the [Citations](#citations))
 
 ## Table of Contents
-- [Example](#example)
-- [Notes](#notes)
-- [Citations](#citations)
-- [License](#license)
-- [Contributions](#contrib)
+- [Example](#Example)
+- [Notes](#Notes)
+- [Citations](#Citations)
+- [License](#License)
+- [Contributions](#Contributions)
 
-## [Example](#example)
+## Example
 
 ```rust
 use strprox::Autocompleter;
@@ -54,13 +54,13 @@ fn main() {
 }
 ```
 
-## [Notes](#notes)
+## Notes
 
 `Autocompleter` is currently a generic struct that limits the length of referenced strings to `u8::MAX` and maximum number of referenced strings to `u32::MAX` by default for space efficiency. A macro can be added later to instantiate it for other unsigned types.
 
 Some of the tests require a file named [`words.txt`](https://github.com/dwyl/english-words/blob/master/words.txt) file (highlighted link) in `src/tests`.
 
-## [Citations](#citations)
+## Citations
 ```bibtex
 @article{10.14778/2977797.2977808,
 author = {Deng, Dong and Li, Guoliang and Wen, He and Jagadish, H. V. and Feng, Jianhua},
@@ -81,8 +81,8 @@ numpages = {12}
 ```
 This paper is also available from the conference website [here](http://www.vldb.org/pvldb/vol9/p828-deng.pdf).
 
-## [License](#license)
+## License
 Dual-licensed under [MIT](LICENSE-MIT) and [Apache-2.0](LICENSE-APACHE). You may choose either license.
 
-### [Contributions](#contrib)
+### Contributions
 Contributions to this project are likewise understood to be dual-licensed under MIT and Apache-2.0.
